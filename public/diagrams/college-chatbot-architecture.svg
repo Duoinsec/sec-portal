@@ -1,0 +1,216 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 760" width="100%" height="100%" style="background:#090d16; border-radius: 14px; font-family: system-ui, -apple-system, sans-serif;">
+  <defs>
+    <linearGradient id="studentGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b82f6"/><stop offset="1%" stop-color="#1d4ed8"/></linearGradient>
+    <linearGradient id="staffGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f59e0b"/><stop offset="1%" stop-color="#b45309"/></linearGradient>
+    <linearGradient id="apiGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6366f1"/><stop offset="1%" stop-color="#4338ca"/></linearGradient>
+    <linearGradient id="nlpGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="1%" stop-color="#6d28d9"/></linearGradient>
+    <linearGradient id="kbGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ec4899"/><stop offset="1%" stop-color="#be185d"/></linearGradient>
+    <linearGradient id="groqGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f97316"/><stop offset="1%" stop-color="#c2410c"/></linearGradient>
+    <linearGradient id="dbGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#10b981"/><stop offset="1%" stop-color="#047857"/></linearGradient>
+    <linearGradient id="visGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#06b6d4"/><stop offset="1%" stop-color="#0e7490"/></linearGradient>
+
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+  </defs>
+
+  <!-- TITLE -->
+  <text x="480" y="34" text-anchor="middle" fill="#ffffff" font-size="20" font-weight="800" letter-spacing="0.5">AI-POWERED COLLEGE ASSISTANT CHATBOT USING NLP</text>
+  <text x="480" y="54" text-anchor="middle" fill="#94a3b8" font-size="12" font-weight="500">Academic System Architecture &amp; Knowledge Ingestion Pipeline — Sengunthar Engineering College</text>
+
+  <!-- ================= LEFT: STUDENT QUERY FLOW ================= -->
+  <!-- Section Label -->
+  <rect x="35" y="75" width="460" height="660" rx="14" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="50" y="98" fill="#60a5fa" font-size="12" font-weight="800" letter-spacing="1">STUDENT QUERY &amp; REASONING PIPELINE</text>
+
+  <!-- 1. STUDENT -->
+  <g filter="url(#shadow)">
+    <rect x="55" y="115" width="190" height="42" rx="8" fill="url(#studentGrad)"/>
+    <text x="150" y="141" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">👤 STUDENT</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 150 157 L 150 180" stroke="#3b82f6" stroke-width="2.5" fill="none"/>
+  <polygon points="150,183 146,174 154,174" fill="#3b82f6"/>
+
+  <!-- 2. WEB / MOBILE CHAT INTERFACE -->
+  <g filter="url(#shadow)">
+    <rect x="55" y="183" width="190" height="42" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1.5"/>
+    <text x="150" y="202" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">CHAT INTERFACE</text>
+    <text x="150" y="217" text-anchor="middle" fill="#93c5fd" font-size="9">Web &amp; Responsive Mobile</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 150 225 L 150 248" stroke="#3b82f6" stroke-width="2.5" fill="none"/>
+  <polygon points="150,251 146,242 154,242" fill="#3b82f6"/>
+
+  <!-- 3. AUTHENTICATION -->
+  <g filter="url(#shadow)">
+    <rect x="55" y="251" width="190" height="42" rx="8" fill="#1e293b" stroke="#60a5fa" stroke-width="1.5"/>
+    <text x="150" y="270" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">AUTHENTICATION</text>
+    <text x="150" y="285" text-anchor="middle" fill="#93c5fd" font-size="9">Supabase JWT &amp; Role Check</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 150 293 L 150 316" stroke="#3b82f6" stroke-width="2.5" fill="none"/>
+  <polygon points="150,319 146,310 154,310" fill="#3b82f6"/>
+
+  <!-- 4. BACKEND API -->
+  <g filter="url(#shadow)">
+    <rect x="55" y="319" width="190" height="42" rx="8" fill="url(#apiGrad)"/>
+    <text x="150" y="338" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">BACKEND API</text>
+    <text x="150" y="353" text-anchor="middle" fill="#e0e7ff" font-size="9">Next.js / Express Route</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 150 361 L 150 384" stroke="#818cf8" stroke-width="2.5" fill="none"/>
+  <polygon points="150,387 146,378 154,378" fill="#818cf8"/>
+
+  <!-- 5. QUERY PROCESSING -->
+  <g filter="url(#shadow)">
+    <rect x="55" y="387" width="190" height="42" rx="8" fill="#1e293b" stroke="#818cf8" stroke-width="1.5"/>
+    <text x="150" y="406" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">QUERY PROCESSING</text>
+    <text x="150" y="421" text-anchor="middle" fill="#c7d2fe" font-size="9">Sanitization &amp; Tokenization</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 150 429 L 150 452" stroke="#a78bfa" stroke-width="2.5" fill="none"/>
+  <polygon points="150,455 146,446 154,446" fill="#a78bfa"/>
+
+  <!-- 6. NLP / INTENT DETECTION -->
+  <g filter="url(#shadow)">
+    <rect x="55" y="455" width="190" height="46" rx="8" fill="url(#nlpGrad)"/>
+    <text x="150" y="474" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">NLP / INTENT DETECTION</text>
+    <text x="150" y="491" text-anchor="middle" fill="#ede9fe" font-size="9">Academic / Visual Classifier</text>
+  </g>
+
+  <!-- Arrow down to Groq Model -->
+  <path d="M 150 501 L 150 528" stroke="#f97316" stroke-width="2.5" fill="none"/>
+  <polygon points="150,531 146,522 154,522" fill="#f97316"/>
+
+  <!-- 7. GROQ AI MODEL -->
+  <g filter="url(#shadow)">
+    <rect x="55" y="531" width="190" height="46" rx="8" fill="url(#groqGrad)"/>
+    <text x="150" y="550" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="800">GROQ AI MODEL</text>
+    <text x="150" y="567" text-anchor="middle" fill="#ffedd5" font-size="9">Llama 3.1 Inference Engine</text>
+  </g>
+
+  <!-- Arrow right to Response Generation -->
+  <path d="M 245 554 L 290 554" stroke="#f97316" stroke-width="2.5" fill="none"/>
+  <polygon points="293,554 284,550 284,558" fill="#f97316"/>
+
+  <!-- 8. RESPONSE GENERATION (JSON) -->
+  <g filter="url(#shadow)">
+    <rect x="295" y="531" width="180" height="46" rx="8" fill="#1e293b" stroke="#f97316" stroke-width="1.5"/>
+    <text x="385" y="550" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">RESPONSE GENERATION</text>
+    <text x="385" y="567" text-anchor="middle" fill="#fed7aa" font-size="9">Structured JSON Builder</text>
+  </g>
+
+  <!-- Arrow up to Visual Decision -->
+  <path d="M 385 531 L 385 504" stroke="#06b6d4" stroke-width="2.5" fill="none"/>
+  <polygon points="385,501 381,510 389,510" fill="#06b6d4"/>
+
+  <!-- 9. VISUAL DECISION -->
+  <g filter="url(#shadow)">
+    <rect x="295" y="455" width="180" height="46" rx="8" fill="url(#visGrad)"/>
+    <text x="385" y="474" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">VISUAL DECISION</text>
+    <text x="385" y="491" text-anchor="middle" fill="#cffafe" font-size="9">visual_required: true / false</text>
+  </g>
+
+  <!-- Arrow up to Response Delivery -->
+  <path d="M 385 455 L 385 428" stroke="#10b981" stroke-width="2.5" fill="none"/>
+  <polygon points="385,425 381,434 389,434" fill="#10b981"/>
+
+  <!-- 10. TEXT + OPTIONAL AI IMAGE -->
+  <g filter="url(#shadow)">
+    <rect x="295" y="375" width="180" height="50" rx="8" fill="url(#dbGrad)"/>
+    <text x="385" y="395" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">TEXT RESPONSE</text>
+    <text x="385" y="412" text-anchor="middle" fill="#d1fae5" font-size="10">+ OPTIONAL AI IMAGE</text>
+  </g>
+
+  <!-- Arrow looping back to Student -->
+  <path d="M 385 375 L 385 136 L 250 136" stroke="#34d399" stroke-width="2.5" stroke-dasharray="4,4" fill="none"/>
+  <polygon points="246,136 255,132 255,140" fill="#34d399"/>
+  <text x="340" y="126" text-anchor="middle" fill="#34d399" font-size="10" font-weight="700">RETURN ANSWER</text>
+
+
+  <!-- ================= RIGHT: KNOWLEDGE & STAFF INGESTION ================= -->
+  <rect x="520" y="75" width="405" height="660" rx="14" fill="#0f172a" stroke="#1e293b" stroke-width="1.5"/>
+  <text x="535" y="98" fill="#f59e0b" font-size="12" font-weight="800" letter-spacing="1">STAFF INGESTION &amp; KNOWLEDGE BASE</text>
+
+  <!-- A. STAFF -->
+  <g filter="url(#shadow)">
+    <rect x="625" y="115" width="200" height="42" rx="8" fill="url(#staffGrad)"/>
+    <text x="725" y="141" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">👨‍🏫 STAFF / FACULTY</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 725 157 L 725 180" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+  <polygon points="725,183 721,174 729,174" fill="#f59e0b"/>
+
+  <!-- B. DOCUMENT UPLOAD -->
+  <g filter="url(#shadow)">
+    <rect x="625" y="183" width="200" height="42" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="725" y="202" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">DOCUMENT UPLOAD</text>
+    <text x="725" y="217" text-anchor="middle" fill="#fef3c7" font-size="9">Staff Portal Uploader</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 725 225 L 725 248" stroke="#f59e0b" stroke-width="2.5" fill="none"/>
+  <polygon points="725,251 721,242 729,242" fill="#f59e0b"/>
+
+  <!-- C. PDF / DOCX / XLSX -->
+  <g filter="url(#shadow)">
+    <rect x="625" y="251" width="200" height="46" rx="8" fill="#1e293b" stroke="#f43f5e" stroke-width="1.5"/>
+    <text x="725" y="271" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">COLLEGE DOCUMENTS</text>
+    <text x="725" y="288" text-anchor="middle" fill="#fecdd3" font-size="9">PDF · DOCX · XLSX Syllabi</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 725 297 L 725 320" stroke="#f43f5e" stroke-width="2.5" fill="none"/>
+  <polygon points="725,323 721,314 729,314" fill="#f43f5e"/>
+
+  <!-- D. DOCUMENT PROCESSING -->
+  <g filter="url(#shadow)">
+    <rect x="625" y="323" width="200" height="46" rx="8" fill="url(#kbGrad)"/>
+    <text x="725" y="343" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">DOCUMENT PROCESSING</text>
+    <text x="725" y="360" text-anchor="middle" fill="#fce7f3" font-size="9">Text Extraction &amp; Chunking</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 725 369 L 725 392" stroke="#ec4899" stroke-width="2.5" fill="none"/>
+  <polygon points="725,395 721,386 729,386" fill="#ec4899"/>
+
+  <!-- E. KNOWLEDGE BASE -->
+  <g filter="url(#shadow)">
+    <rect x="625" y="395" width="200" height="48" rx="8" fill="#1e293b" stroke="#ec4899" stroke-width="1.5"/>
+    <text x="725" y="415" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="800">KNOWLEDGE BASE</text>
+    <text x="725" y="433" text-anchor="middle" fill="#fbcfe8" font-size="9">Curriculum &amp; Policies Repository</text>
+  </g>
+
+  <!-- Arrow -->
+  <path d="M 725 443 L 725 466" stroke="#10b981" stroke-width="2.5" fill="none"/>
+  <polygon points="725,469 721,460 729,460" fill="#10b981"/>
+
+  <!-- F. SUPABASE DATABASE / STORAGE -->
+  <g filter="url(#shadow)">
+    <rect x="625" y="469" width="200" height="52" rx="8" fill="url(#dbGrad)"/>
+    <text x="725" y="490" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="800">SUPABASE</text>
+    <text x="725" y="508" text-anchor="middle" fill="#d1fae5" font-size="10">PostgreSQL DB &amp; Buckets</text>
+  </g>
+
+  <!-- CROSS-LINK: Supabase Knowledge injected into Groq Model & NLP -->
+  <path d="M 625 495 L 485 495 L 485 478 L 245 478" stroke="#ec4899" stroke-width="2" stroke-dasharray="3,3" fill="none"/>
+  <polygon points="241,478 250,474 250,482" fill="#ec4899"/>
+  <text x="540" y="488" fill="#ec4899" font-size="9" font-weight="700">RAG CONTEXT</text>
+
+  <!-- CROSS-LINK: Supabase to Groq Model -->
+  <path d="M 625 510 L 510 510 L 510 554 L 245 554" stroke="#10b981" stroke-width="2" stroke-dasharray="3,3" fill="none"/>
+  <polygon points="241,554 250,550 250,558" fill="#10b981"/>
+  <text x="535" y="540" fill="#10b981" font-size="9" font-weight="700">DATA GROUNDING</text>
+
+  <!-- FOOTER BADGE -->
+  <rect x="545" y="660" width="355" height="48" rx="8" fill="#1e293b" stroke="#334155"/>
+  <text x="560" y="680" fill="#38bdf8" font-size="11" font-weight="700">Sengunthar Engineering College (SEC)</text>
+  <text x="560" y="696" fill="#94a3b8" font-size="9.5">NAAC 'A' Accredited · Affiliated to Anna University, Chennai</text>
+</svg>

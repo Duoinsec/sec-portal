@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 380" width="100%" height="100%" style="background:#0f172a; border-radius: 12px; font-family: system-ui, -apple-system, sans-serif;">
+  <defs>
+    <linearGradient id="pGrad1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3b82f6"/><stop offset="1%" stop-color="#1d4ed8"/></linearGradient>
+    <linearGradient id="pGrad2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#8b5cf6"/><stop offset="1%" stop-color="#6d28d9"/></linearGradient>
+    <linearGradient id="pGrad3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ec4899"/><stop offset="1%" stop-color="#be185d"/></linearGradient>
+    <linearGradient id="pGrad4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#f59e0b"/><stop offset="1%" stop-color="#d97706"/></linearGradient>
+    <linearGradient id="pGrad5" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#10b981"/><stop offset="1%" stop-color="#047857"/></linearGradient>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="38" text-anchor="middle" fill="#ffffff" font-size="20" font-weight="800">SEC CAMPUS RECRUITMENT ARCHITECTURE</text>
+  <text x="400" y="60" text-anchor="middle" fill="#94a3b8" font-size="13">End-to-End Placement &amp; Interview Process Pipeline</text>
+
+  <!-- Steps Horizontal Flow -->
+  <!-- Step 1 -->
+  <rect x="30" y="100" width="130" height="150" rx="10" fill="url(#pGrad1)" stroke="#60a5fa" stroke-width="1.5"/>
+  <circle cx="95" cy="130" r="16" fill="#ffffff" fill-opacity="0.2"/>
+  <text x="95" y="136" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="800">1</text>
+  <text x="95" y="165" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">Eligibility</text>
+  <text x="95" y="185" text-anchor="middle" fill="#dbeafe" font-size="10">CGPA Filter</text>
+  <text x="95" y="200" text-anchor="middle" fill="#dbeafe" font-size="10">0-2 Backlogs</text>
+  <text x="95" y="215" text-anchor="middle" fill="#bfdbfe" font-size="10">Dept Clearance</text>
+
+  <!-- Arrow 1 -->
+  <path d="M 165 175 L 180 175" stroke="#38bdf8" stroke-width="3" fill="none"/>
+  <polygon points="183,175 175,170 175,180" fill="#38bdf8"/>
+
+  <!-- Step 2 -->
+  <rect x="185" y="100" width="130" height="150" rx="10" fill="url(#pGrad2)" stroke="#a78bfa" stroke-width="1.5"/>
+  <circle cx="250" cy="130" r="16" fill="#ffffff" fill-opacity="0.2"/>
+  <text x="250" y="136" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="800">2</text>
+  <text x="250" y="165" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">Pre-Placement</text>
+  <text x="250" y="185" text-anchor="middle" fill="#ede9fe" font-size="10">Corporate Talk</text>
+  <text x="250" y="200" text-anchor="middle" fill="#ede9fe" font-size="10">Job Role &amp; CTC</text>
+  <text x="250" y="215" text-anchor="middle" fill="#ddd6fe" font-size="10">Q&amp;A Session</text>
+
+  <!-- Arrow 2 -->
+  <path d="M 320 175 L 335 175" stroke="#a78bfa" stroke-width="3" fill="none"/>
+  <polygon points="338,175 330,170 330,180" fill="#a78bfa"/>
+
+  <!-- Step 3 -->
+  <rect x="340" y="100" width="130" height="150" rx="10" fill="url(#pGrad3)" stroke="#f472b6" stroke-width="1.5"/>
+  <circle cx="405" cy="130" r="16" fill="#ffffff" fill-opacity="0.2"/>
+  <text x="405" y="136" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="800">3</text>
+  <text x="405" y="165" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">Online Test</text>
+  <text x="405" y="185" text-anchor="middle" fill="#fce7f3" font-size="10">Quantitative Apt</text>
+  <text x="405" y="200" text-anchor="middle" fill="#fce7f3" font-size="10">Logical Reasoning</text>
+  <text x="405" y="215" text-anchor="middle" fill="#fbcfe8" font-size="10">Coding Challenge</text>
+
+  <!-- Arrow 3 -->
+  <path d="M 475 175 L 490 175" stroke="#f472b6" stroke-width="3" fill="none"/>
+  <polygon points="493,175 485,170 485,180" fill="#f472b6"/>
+
+  <!-- Step 4 -->
+  <rect x="495" y="100" width="130" height="150" rx="10" fill="url(#pGrad4)" stroke="#fbbf24" stroke-width="1.5"/>
+  <circle cx="560" cy="130" r="16" fill="#ffffff" fill-opacity="0.2"/>
+  <text x="560" y="136" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="800">4</text>
+  <text x="560" y="165" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">Tech Interview</text>
+  <text x="560" y="185" text-anchor="middle" fill="#fef3c7" font-size="10">Core Concepts</text>
+  <text x="560" y="200" text-anchor="middle" fill="#fef3c7" font-size="10">Project Defense</text>
+  <text x="560" y="215" text-anchor="middle" fill="#fde68a" font-size="10">Live Problem Solve</text>
+
+  <!-- Arrow 4 -->
+  <path d="M 630 175 L 645 175" stroke="#fbbf24" stroke-width="3" fill="none"/>
+  <polygon points="648,175 640,170 640,180" fill="#fbbf24"/>
+
+  <!-- Step 5 -->
+  <rect x="650" y="100" width="120" height="150" rx="10" fill="url(#pGrad5)" stroke="#34d399" stroke-width="1.5"/>
+  <circle cx="710" cy="130" r="16" fill="#ffffff" fill-opacity="0.2"/>
+  <text x="710" y="136" text-anchor="middle" fill="#ffffff" font-size="14" font-weight="800">5</text>
+  <text x="710" y="165" text-anchor="middle" fill="#ffffff" font-size="13" font-weight="700">HR &amp; Offer</text>
+  <text x="710" y="185" text-anchor="middle" fill="#d1fae5" font-size="10">Culture Fit</text>
+  <text x="710" y="200" text-anchor="middle" fill="#d1fae5" font-size="10">Offer Letter</text>
+  <text x="710" y="215" text-anchor="middle" fill="#a7f3d0" font-size="10">🎉 Selected</text>
+
+  <!-- Bottom Details Card -->
+  <rect x="30" y="280" width="740" height="75" rx="10" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+  <text x="50" y="308" fill="#38bdf8" font-size="13" font-weight="700">SEC Training &amp; Placement Cell Support:</text>
+  <text x="50" y="328" fill="#94a3b8" font-size="11">Pre-recruitment training from Year 2 · Mock Interviews · Resume Review · Top Recruiters: Zoho, TCS, Infosys, Wipro</text>
+  <text x="50" y="344" fill="#64748b" font-size="10">Official Inquiries: placements@sec.edu.in · Campus Placement Portal</text>
+</svg>

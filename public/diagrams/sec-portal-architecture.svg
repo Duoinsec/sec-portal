@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 480" width="100%" height="100%" style="background:#0f172a; border-radius: 12px; font-family: system-ui, -apple-system, sans-serif;">
+  <defs>
+    <linearGradient id="blueGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="1%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="purpleGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="1%" stop-color="#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="emeraldGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="1%" stop-color="#047857"/>
+    </linearGradient>
+    <linearGradient id="amberGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/>
+      <stop offset="1%" stop-color="#d97706"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+  </defs>
+
+  <!-- Title & Header -->
+  <text x="400" y="38" text-anchor="middle" fill="#f8fafc" font-size="20" font-weight="800" letter-spacing="0.5">SENGUNTHAR ENGINEERING COLLEGE (SEC)</text>
+  <text x="400" y="60" text-anchor="middle" fill="#94a3b8" font-size="13" font-weight="500">AI Assistant &amp; Campus Portal – System Architecture</text>
+
+  <!-- LAYER 1: CLIENT TIER -->
+  <g filter="url(#glow)">
+    <rect x="40" y="85" width="720" height="95" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <rect x="52" y="97" width="130" height="24" rx="6" fill="#3b82f6" fill-opacity="0.2"/>
+    <text x="117" y="113" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="700">CLIENT LAYER</text>
+
+    <!-- Sub components -->
+    <rect x="52" y="128" width="200" height="40" rx="8" fill="url(#blueGrad)"/>
+    <text x="152" y="146" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">Student Portal</text>
+    <text x="152" y="160" text-anchor="middle" fill="#dbeafe" font-size="10">Chat, Marks, Attendance</text>
+
+    <rect x="272" y="128" width="200" height="40" rx="8" fill="url(#blueGrad)"/>
+    <text x="372" y="146" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">Staff Portal</text>
+    <text x="372" y="160" text-anchor="middle" fill="#dbeafe" font-size="10">Attendance Entry, Marks, OD</text>
+
+    <rect x="492" y="128" width="250" height="40" rx="8" fill="url(#blueGrad)"/>
+    <text x="617" y="146" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">Admin Dashboard</text>
+    <text x="617" y="160" text-anchor="middle" fill="#dbeafe" font-size="10">Placements, Notices, Depts</text>
+  </g>
+
+  <!-- DOWN ARROWS 1 -->
+  <g stroke="#38bdf8" stroke-width="2" fill="none">
+    <path d="M 200 180 L 200 215" marker-end="url(#arrow)"/>
+    <path d="M 400 180 L 400 215"/>
+    <path d="M 600 180 L 600 215"/>
+    <polygon points="200,217 196,208 204,208" fill="#38bdf8"/>
+    <polygon points="400,217 396,208 404,208" fill="#38bdf8"/>
+    <polygon points="600,217 596,208 604,208" fill="#38bdf8"/>
+  </g>
+  <text x="400" y="202" text-anchor="middle" fill="#38bdf8" font-size="10" font-weight="600" letter-spacing="1">HTTPS / JSON REST API</text>
+
+  <!-- LAYER 2: API & AI REASONING TIER -->
+  <g filter="url(#glow)">
+    <rect x="40" y="220" width="720" height="110" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <rect x="52" y="232" width="165" height="24" rx="6" fill="#8b5cf6" fill-opacity="0.2"/>
+    <text x="134" y="248" text-anchor="middle" fill="#a78bfa" font-size="11" font-weight="700">API &amp; AI ENGINE LAYER</text>
+
+    <!-- Sub components -->
+    <rect x="52" y="265" width="180" height="52" rx="8" fill="url(#purpleGrad)"/>
+    <text x="142" y="287" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">Next.js API Engine</text>
+    <text x="142" y="303" text-anchor="middle" fill="#ede9fe" font-size="10">/api/chat Route &amp; Auth</text>
+
+    <rect x="252" y="265" width="240" height="52" rx="8" fill="url(#amberGrad)"/>
+    <text x="372" y="287" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">Groq LLM Acceleration</text>
+    <text x="372" y="303" text-anchor="middle" fill="#fef3c7" font-size="10">Llama 3.1 &amp; Fast Inference</text>
+
+    <rect x="512" y="265" width="230" height="52" rx="8" fill="url(#purpleGrad)"/>
+    <text x="627" y="287" text-anchor="middle" fill="#ffffff" font-size="12" font-weight="700">Context &amp; RAG Engine</text>
+    <text x="627" y="303" text-anchor="middle" fill="#ede9fe" font-size="10">Student DB Context Injector</text>
+  </g>
+
+  <!-- DOWN ARROWS 2 -->
+  <g stroke="#34d399" stroke-width="2" fill="none">
+    <path d="M 200 330 L 200 365"/>
+    <path d="M 400 330 L 400 365"/>
+    <path d="M 600 330 L 600 365"/>
+    <polygon points="200,367 196,358 204,358" fill="#34d399"/>
+    <polygon points="400,367 396,358 404,358" fill="#34d399"/>
+    <polygon points="600,367 596,358 604,358" fill="#34d399"/>
+  </g>
+  <text x="400" y="352" text-anchor="middle" fill="#34d399" font-size="10" font-weight="600" letter-spacing="1">SUPABASE POSTGRESQL + RLS</text>
+
+  <!-- LAYER 3: DATA & STORAGE TIER -->
+  <g filter="url(#glow)">
+    <rect x="40" y="370" width="720" height="85" rx="12" fill="#1e293b" stroke="#334155" stroke-width="1.5"/>
+    <rect x="52" y="380" width="175" height="22" rx="6" fill="#10b981" fill-opacity="0.2"/>
+    <text x="139" y="395" text-anchor="middle" fill="#34d399" font-size="11" font-weight="700">DATA &amp; CLOUD TIER</text>
+
+    <!-- Sub components -->
+    <rect x="52" y="407" width="160" height="36" rx="6" fill="url(#emeraldGrad)"/>
+    <text x="132" y="429" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">Supabase Auth</text>
+
+    <rect x="228" y="407" width="180" height="36" rx="6" fill="url(#emeraldGrad)"/>
+    <text x="318" y="429" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">PostgreSQL Database</text>
+
+    <rect x="424" y="407" width="170" height="36" rx="6" fill="url(#emeraldGrad)"/>
+    <text x="509" y="429" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">Row Level Security</text>
+
+    <rect x="610" y="407" width="132" height="36" rx="6" fill="url(#emeraldGrad)"/>
+    <text x="676" y="429" text-anchor="middle" fill="#ffffff" font-size="11" font-weight="700">Cloud Storage</text>
+  </g>
+</svg>
