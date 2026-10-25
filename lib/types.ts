@@ -39,6 +39,7 @@ export interface Student {
   register_number: string;
   roll_number: string | null;
   full_name: string;
+  password?: string | null;
   department_id: string | null;
   year: number;
   semester: number;
@@ -189,11 +190,16 @@ export interface StudyMaterial {
   subject_id: string | null;
   department_id: string | null;
   year: number | null;
+  semester?: number | null;
   file_url: string;
   file_type: string | null;
   is_active: boolean;
   created_at: string;
+  category?: string;
   subject?: Subject;
+  department?: Department;
+  author_name?: string;
+  file_size?: string;
 }
 
 export interface DocumentRecord {

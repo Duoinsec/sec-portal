@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
+import type { ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions';
 import { checkRateLimit, validateAndSanitizeInput } from '@/lib/rate-limiter';
 import { generateVisualForQuery } from '@/lib/image-service';
 
@@ -91,8 +92,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Format chat history
-    const formattedMessages = messages.map((m: any) => ({
-      role: m.role === 'assistant' ? 'assistant' : 'user',
+    const formattedMessages: ChatCompletionMessageParam[] = messages.map((m: any) => ({
+      role: (m.role === 'assistant' ? 'assistant' : 'user') as 'assistant' | 'user',
       content: String(m.content || ''),
     }));
 

@@ -302,22 +302,28 @@ export function useStudyMaterials() {
   const [data, setData] = useState<StudyMaterial[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const { data: materials } = await supabase
+  const fetchMaterials = async () => {
+    try {
+      const { data: materials, error } = await supabase
         .from('study_materials')
-        .select('*, subject:subjects(*)')
+        .select('*, subject:subjects(*), department:departments(*)')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
-      if (!active) return;
-      setData(materials as StudyMaterial[] || []);
+      if (!error && materials) {
+        setData(materials as StudyMaterial[]);
+      }
+    } catch {
+      // ignore
+    } finally {
       setLoading(false);
-    })();
-    return () => { active = false; };
+    }
+  };
+
+  useEffect(() => {
+    fetchMaterials();
   }, []);
 
-  return { data, loading };
+  return { data, loading, refresh: fetchMaterials };
 }
 
 export function useStudentSkills(studentId?: string) {
@@ -392,23 +398,22 @@ export function useDepartmentStudents(departmentId?: string) {
   const [data, setData] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchStudents = async () => {
     if (!departmentId) return;
-    let active = true;
-    (async () => {
-      const { data: students } = await supabase
-        .from('students')
-        .select('*, department:departments(*)')
-        .eq('department_id', departmentId)
-        .order('register_number', { ascending: true });
-      if (!active) return;
-      setData(students as Student[] || []);
-      setLoading(false);
-    })();
-    return () => { active = false; };
+    const { data: students } = await supabase
+      .from('students')
+      .select('*, department:departments(*)')
+      .eq('department_id', departmentId)
+      .order('register_number', { ascending: true });
+    setData(students as Student[] || []);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchStudents();
   }, [departmentId]);
 
-  return { data, loading };
+  return { data, loading, refresh: fetchStudents };
 }
 
 export function useAllStudents() {
@@ -457,21 +462,19 @@ export function useDocuments() {
   const [data, setData] = useState<DocumentRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const { data: docs } = await supabase
-        .from('documents')
-        .select('*, department:departments(*)')
-        .order('created_at', { ascending: false });
-      if (!active) return;
-      setData(docs as DocumentRecord[] || []);
-      setLoading(false);
-    })();
-    return () => { active = false; };
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data: docs } = await supabase
+      .from('documents')
+      .select('*, department:departments(*)')
+      .order('created_at', { ascending: false });
+    setData(docs as DocumentRecord[] || []);
+    setLoading(false);
   }, []);
 
-  return { data, loading };
+  useEffect(() => { load(); }, [load]);
+
+  return { data, loading, refresh: load };
 }
 
 export function useChatSessions() {

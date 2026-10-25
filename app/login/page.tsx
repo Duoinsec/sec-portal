@@ -4,7 +4,20 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
-import { Loader2, Eye, EyeOff, GraduationCap, Users, ShieldCheck } from 'lucide-react';
+import {
+  Loader2,
+  Eye,
+  EyeOff,
+  GraduationCap,
+  Users,
+  ShieldCheck,
+  Mail,
+  Lock,
+  ArrowRight,
+  Sparkles,
+  KeyRound,
+  CheckCircle2,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
@@ -15,10 +28,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
-
-  useState(() => {
-    // If already logged in, redirect immediately
-  });
+  const [activeDemo, setActiveDemo] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +42,8 @@ export default function LoginPage() {
     }
     toast.success('Welcome back!');
     if (profile) {
-      const route = profile.role === 'ADMIN' ? '/admin' : profile.role === 'STAFF' ? '/staff' : '/student';
+      const route =
+        profile.role === 'ADMIN' ? '/admin' : profile.role === 'STAFF' ? '/staff' : '/student';
       router.replace(route);
     } else {
       router.replace('/');
@@ -53,9 +64,10 @@ export default function LoginPage() {
     }
   };
 
-  const fillAccount = (accountEmail: string, accountPass: string) => {
+  const fillAccount = (accountEmail: string, accountPass: string, demoKey?: string) => {
     setEmail(accountEmail);
     setPassword(accountPass);
+    if (demoKey) setActiveDemo(demoKey);
   };
 
   const fillDemo = (type: 'student' | 'staff' | 'admin') => {
@@ -66,209 +78,304 @@ export default function LoginPage() {
     };
     setEmail(creds[type].email);
     setPassword(creds[type].password);
+    setActiveDemo(type);
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-[#F8FBFF]">
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-[#123B73] via-[#1468D5] to-[#0d4a9e] relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'1\'%3E%3Ccircle cx=\'30\' cy=\'30\' r=\'2\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")' }} />
-        <div className="relative flex flex-col justify-between p-12 text-white">
-          <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white p-1.5 shadow-md shrink-0 overflow-hidden">
-              <img src="/images/sec-logo.png" alt="Sengunthar Engineering College Logo" className="h-full w-full object-contain" />
+    <div className="relative min-h-screen h-[100dvh] w-full overflow-y-auto bg-gradient-to-br from-[#071326] via-[#0b1f3d] to-[#123B73] flex items-center justify-center p-4 sm:p-6 md:p-10 select-none scrollbar-hide">
+      {/* Ambient glowing orbs in the background */}
+      <div className="absolute top-0 right-1/4 w-80 sm:w-96 h-80 sm:h-96 rounded-full bg-cyan-500/15 blur-3xl pointer-events-none animate-pulse [animation-duration:8s]" />
+      <div className="absolute bottom-10 left-10 w-80 sm:w-96 h-80 sm:h-96 rounded-full bg-blue-600/20 blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+
+      {/* Main Container */}
+      <div className="relative w-full max-w-md my-auto animate-fade-in">
+        {/* Glow border wrapper */}
+        <div className="relative rounded-3xl bg-white/[0.97] backdrop-blur-2xl p-6 sm:p-8 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.5)] border border-white/60">
+          {/* Header & Logo */}
+          <div className="flex flex-col items-center text-center mb-6">
+            {/* College Emblem Frame */}
+            <div className="relative mb-3.5 group">
+              <div className="absolute -inset-1.5 rounded-2xl bg-gradient-to-tr from-[#1468D5] via-[#2563eb] to-[#38bdf8] opacity-75 blur-sm transition-all duration-300 group-hover:opacity-100" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-md border border-slate-100 overflow-hidden">
+                <img
+                  src="/images/sec-logo.png"
+                  alt="Sengunthar Engineering College Logo"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white border-2 border-white shadow-xs">
+                <span className="h-2 w-2 rounded-full bg-white" />
+              </div>
             </div>
-            <div>
-              <p className="font-bold text-lg">SEC AI Assistant</p>
-              <p className="text-sm text-white/80">Sengunthar Engineering College</p>
+
+            {/* Institution Badge */}
+            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-50/90 border border-blue-200/70 mb-2">
+              <Sparkles className="h-3 w-3 text-[#1468D5]" />
+              <span className="text-[10.5px] font-bold tracking-wider uppercase text-[#1468D5]">
+                Sengunthar Engineering College
+              </span>
             </div>
-          </div>
-          <div className="space-y-6">
-            <h1 className="text-4xl font-bold leading-tight">Your AI College Companion</h1>
-            <p className="text-lg text-white/80 max-w-md">
-              Attendance, marks, placements, announcements, and AI-powered assistance — all in one secure platform.
+
+            <h1 className="text-2xl font-black tracking-tight text-[#0f172a]">
+              {resetMode ? 'Reset Credentials' : 'SEC AI Portal'}
+            </h1>
+            <p className="text-xs text-slate-500 mt-1 max-w-xs leading-relaxed font-medium">
+              {resetMode
+                ? 'Enter your institutional email to recover access'
+                : 'Autonomous · Anna University Affiliated · NAAC \'A\''}
             </p>
-            <div className="space-y-3 pt-4">
-              {[
-                'AI-powered college assistant for students',
-                'Staff & admin management portals',
-                'Secure, role-based access control',
-              ].map((feat) => (
-                <div key={feat} className="flex items-center gap-3">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <span className="text-sm text-white/90">{feat}</span>
-                </div>
-              ))}
-            </div>
           </div>
-          <p className="text-xs text-white/50">Tiruchengode, Tamil Nadu</p>
-        </div>
-      </div>
-
-      <div className="flex flex-1 items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-md">
-          <div className="md:hidden flex items-center gap-3 mb-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white border border-slate-200 p-1 shadow-sm shrink-0 overflow-hidden">
-              <img src="/images/sec-logo.png" alt="SEC Logo" className="h-full w-full object-contain" />
-            </div>
-            <div>
-              <p className="font-bold text-[#172033]">SEC AI Assistant</p>
-              <p className="text-xs text-[#6B7280]">Sengunthar Engineering College</p>
-            </div>
-          </div>
-
-          <h2 className="text-2xl font-bold text-[#172033] mb-1">
-            {resetMode ? 'Reset Password' : 'Welcome Back'}
-          </h2>
-          <p className="text-sm text-[#6B7280] mb-6">
-            {resetMode ? 'Enter your email to receive a reset link' : 'Sign in to your account to continue'}
-          </p>
 
           {!resetMode ? (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#172033] mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@sec.edu.in"
-                  className="w-full rounded-xl border border-[#E6EEF7] bg-white px-4 py-3 text-sm outline-none focus:border-[#1468D5] focus:ring-2 focus:ring-[#1468D5]/20 transition-all"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#172033] mb-1.5">Password</label>
+              {/* Email Input */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 tracking-wide">
+                  Institutional Email
+                </label>
                 <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      setActiveDemo(null);
+                    }}
+                    placeholder="student@sec.edu.in"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 pl-10 pr-4 py-3 text-sm outline-none focus:border-[#1468D5] focus:bg-white focus:ring-4 focus:ring-[#1468D5]/15 transition-all text-[#0f172a] placeholder:text-slate-400 font-medium"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Password Input */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700 tracking-wide">
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setResetMode(true)}
+                    className="text-xs font-semibold text-[#1468D5] hover:text-blue-700 transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Lock className="h-4 w-4" />
+                  </div>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    className="w-full rounded-xl border border-[#E6EEF7] bg-white px-4 py-3 pr-11 text-sm outline-none focus:border-[#1468D5] focus:ring-2 focus:ring-[#1468D5]/20 transition-all"
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setActiveDemo(null);
+                    }}
+                    placeholder="••••••••••••"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 pl-10 pr-11 py-3 text-sm outline-none focus:border-[#1468D5] focus:bg-white focus:ring-4 focus:ring-[#1468D5]/15 transition-all text-[#0f172a] placeholder:text-slate-400 font-medium tracking-wide"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#172033]"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors p-1"
+                    title={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <button type="button" onClick={() => setResetMode(true)} className="text-sm text-[#1468D5] hover:underline">
-                  Forgot password?
-                </button>
-              </div>
-
+              {/* Unique Sign In Button */}
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1468D5] px-4 py-3 text-sm font-semibold text-white shadow-md hover:bg-[#123B73] transition-all disabled:opacity-60"
+                className="group relative mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#1468D5] via-[#2563eb] to-[#0284c7] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/35 hover:brightness-105 active:scale-[0.99] transition-all disabled:opacity-60 overflow-hidden"
               >
-                {loading && <Loader2 className="h-4.5 w-4.5 animate-spin" />}
-                Sign In
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <span>Sign In to Portal</span>
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </>
+                )}
               </button>
             </form>
           ) : (
+            /* Reset Password Form */
             <form onSubmit={handleReset} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[#172033] mb-1.5">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@sec.edu.in"
-                  className="w-full rounded-xl border border-[#E6EEF7] bg-white px-4 py-3 text-sm outline-none focus:border-[#1468D5] focus:ring-2 focus:ring-[#1468D5]/20 transition-all"
-                  required
-                />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 tracking-wide">
+                  Enter Registered Email
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="student@sec.edu.in"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 pl-10 pr-4 py-3 text-sm outline-none focus:border-[#1468D5] focus:bg-white focus:ring-4 focus:ring-[#1468D5]/15 transition-all text-[#0f172a] placeholder:text-slate-400 font-medium"
+                    required
+                  />
+                </div>
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1468D5] px-4 py-3 text-sm font-semibold text-white shadow-md hover:bg-[#123B73] transition-all disabled:opacity-60"
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#1468D5] to-[#2563eb] px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:shadow-xl transition-all disabled:opacity-60"
               >
-                {loading && <Loader2 className="h-4.5 w-4.5 animate-spin" />}
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 Send Reset Link
               </button>
-              <button type="button" onClick={() => setResetMode(false)} className="w-full text-sm text-[#6B7280] hover:text-[#172033]">
-                Back to sign in
+              <button
+                type="button"
+                onClick={() => setResetMode(false)}
+                className="w-full text-center text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors pt-1"
+              >
+                ← Back to sign in
               </button>
             </form>
           )}
 
+          {/* Quick Demo Access Section */}
           {!resetMode && (
-            <div className="mt-8 border-t border-[#E6EEF7] pt-6">
-              <p className="text-xs font-medium text-[#6B7280] mb-3 text-center">Quick demo access</p>
+            <div className="mt-6 pt-5 border-t border-slate-100">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <span className="h-px w-10 bg-slate-200" />
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  Quick Demo Access
+                </span>
+                <span className="h-px w-10 bg-slate-200" />
+              </div>
+
+              {/* 3 Main Role Demo Cards */}
               <div className="grid grid-cols-3 gap-2">
+                {/* Student */}
                 <button
+                  type="button"
                   onClick={() => fillDemo('student')}
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-[#E6EEF7] bg-white px-3 py-3 hover:border-[#1468D5] hover:bg-[#F8FBFF] transition-all"
+                  className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 transition-all border text-center ${
+                    activeDemo === 'student'
+                      ? 'bg-blue-50/90 border-[#1468D5] shadow-sm ring-2 ring-[#1468D5]/20'
+                      : 'bg-slate-50/60 border-slate-200/80 hover:bg-blue-50/50 hover:border-blue-300'
+                  }`}
                 >
-                  <GraduationCap className="h-5 w-5 text-[#1468D5]" />
-                  <span className="text-xs font-medium text-[#172033]">Student</span>
-                  <span className="text-[10px] text-[#6B7280]">Sanjay G</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#1468D5] to-[#2563eb] text-white shadow-xs">
+                    <GraduationCap className="h-4 w-4" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-800">Student</span>
+                  <span className="text-[10px] text-slate-500 truncate w-full font-medium">
+                    Sanjay G
+                  </span>
                 </button>
+
+                {/* Staff */}
                 <button
+                  type="button"
                   onClick={() => fillDemo('staff')}
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-[#E6EEF7] bg-white px-3 py-3 hover:border-[#1468D5] hover:bg-[#F8FBFF] transition-all"
+                  className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 transition-all border text-center ${
+                    activeDemo === 'staff'
+                      ? 'bg-emerald-50/90 border-emerald-500 shadow-sm ring-2 ring-emerald-500/20'
+                      : 'bg-slate-50/60 border-slate-200/80 hover:bg-emerald-50/50 hover:border-emerald-300'
+                  }`}
                 >
-                  <Users className="h-5 w-5 text-[#1468D5]" />
-                  <span className="text-xs font-medium text-[#172033]">Staff</span>
-                  <span className="text-[10px] text-[#6B7280]">Shanthipriya</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xs">
+                    <Users className="h-4 w-4" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-800">Staff</span>
+                  <span className="text-[10px] text-slate-500 truncate w-full font-medium">
+                    Shanthipriya
+                  </span>
                 </button>
+
+                {/* Admin */}
                 <button
+                  type="button"
                   onClick={() => fillDemo('admin')}
-                  className="flex flex-col items-center gap-1.5 rounded-xl border border-[#E6EEF7] bg-white px-3 py-3 hover:border-[#1468D5] hover:bg-[#F8FBFF] transition-all"
+                  className={`group relative flex flex-col items-center justify-center gap-1.5 rounded-2xl p-2.5 transition-all border text-center ${
+                    activeDemo === 'admin'
+                      ? 'bg-rose-50/90 border-rose-500 shadow-sm ring-2 ring-rose-500/20'
+                      : 'bg-slate-50/60 border-slate-200/80 hover:bg-rose-50/50 hover:border-rose-300'
+                  }`}
                 >
-                  <ShieldCheck className="h-5 w-5 text-[#1468D5]" />
-                  <span className="text-xs font-medium text-[#172033]">Admin</span>
-                  <span className="text-[10px] text-[#6B7280]">Sathish Kumar</span>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-xs">
+                    <ShieldCheck className="h-4 w-4" />
+                  </div>
+                  <span className="text-xs font-bold text-slate-800">Admin</span>
+                  <span className="text-[10px] text-slate-500 truncate w-full font-medium">
+                    Sathish K.
+                  </span>
                 </button>
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-1.5 mt-3 pt-3 border-t border-[#F0F4F8]">
-                <span className="text-[10px] text-[#6B7280] w-full text-center mb-0.5">More demo accounts:</span>
+
+              {/* Other Demo Accounts */}
+              <div className="mt-3.5 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-center gap-1.5">
+                <span className="text-[10px] font-semibold text-slate-400 w-full text-center">
+                  More accounts:
+                </span>
                 <button
                   type="button"
-                  onClick={() => fillAccount('23ad009@sec.edu.in', 'student123')}
-                  className="rounded-lg bg-[#F1F5F9] px-2 py-1 text-[11px] font-medium text-[#334155] hover:bg-[#E2E8F0] hover:text-[#0F172A] transition-colors"
+                  onClick={() => fillAccount('23ad009@sec.edu.in', 'student123', 'chandrika')}
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all border ${
+                    activeDemo === 'chandrika'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-slate-100/80 text-slate-600 border-slate-200/60 hover:bg-slate-200 hover:text-slate-900'
+                  }`}
                 >
-                  Chandrika
+                  Chandrika (Student)
                 </button>
                 <button
                   type="button"
-                  onClick={() => fillAccount('23ad010@sec.edu.in', 'student123')}
-                  className="rounded-lg bg-[#F1F5F9] px-2 py-1 text-[11px] font-medium text-[#334155] hover:bg-[#E2E8F0] hover:text-[#0F172A] transition-colors"
+                  onClick={() => fillAccount('23ad010@sec.edu.in', 'student123', 'athul')}
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all border ${
+                    activeDemo === 'athul'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                      : 'bg-slate-100/80 text-slate-600 border-slate-200/60 hover:bg-slate-200 hover:text-slate-900'
+                  }`}
                 >
-                  Athul
+                  Athul (Student)
                 </button>
                 <button
                   type="button"
-                  onClick={() => fillAccount('priyadharshini@sec.edu.in', 'staff123')}
-                  className="rounded-lg bg-[#F1F5F9] px-2 py-1 text-[11px] font-medium text-[#334155] hover:bg-[#E2E8F0] hover:text-[#0F172A] transition-colors"
+                  onClick={() => fillAccount('priyadharshini@sec.edu.in', 'staff123', 'priya')}
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all border ${
+                    activeDemo === 'priya'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                      : 'bg-slate-100/80 text-slate-600 border-slate-200/60 hover:bg-slate-200 hover:text-slate-900'
+                  }`}
                 >
-                  Priyadharshini
+                  Priyadharshini (Staff)
                 </button>
                 <button
                   type="button"
-                  onClick={() => fillAccount('indhuja@sec.edu.in', 'staff123')}
-                  className="rounded-lg bg-[#F1F5F9] px-2 py-1 text-[11px] font-medium text-[#334155] hover:bg-[#E2E8F0] hover:text-[#0F172A] transition-colors"
+                  onClick={() => fillAccount('indhuja@sec.edu.in', 'staff123', 'indhuja')}
+                  className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-all border ${
+                    activeDemo === 'indhuja'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+                      : 'bg-slate-100/80 text-slate-600 border-slate-200/60 hover:bg-slate-200 hover:text-slate-900'
+                  }`}
                 >
-                  Indhuja
+                  Indhuja (Staff)
                 </button>
               </div>
-              <p className="text-[10px] text-[#6B7280] text-center mt-3">
-                Click any account to pre-fill credentials for testing
-              </p>
             </div>
           )}
         </div>
+
+        {/* Footer info below card */}
+        <p className="text-center text-[11px] text-blue-200/60 mt-4 font-medium">
+          Sengunthar Engineering College · Tiruchengode
+        </p>
       </div>
     </div>
   );

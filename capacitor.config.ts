@@ -3,7 +3,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'in.edu.sec.portal',
   appName: 'SEC Portal',
-  webDir: 'public',
+  webDir: 'out',
   server: {
     androidScheme: 'https',
     cleartext: true,

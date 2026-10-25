@@ -3,7 +3,7 @@
 import { useAuth } from '@/lib/auth-context';
 import { useStaffProfile } from '@/lib/hooks';
 import { Card, Badge } from '@/components/shared';
-import { Users, CalendarCheck, GraduationCap, FileText, Megaphone, LogOut, ChevronRight } from 'lucide-react';
+import { Users, CalendarCheck, GraduationCap, FileText, Megaphone, LogOut, ChevronRight, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function StaffMore() {
@@ -16,10 +16,11 @@ export default function StaffMore() {
     { label: 'Attendance Roll Call', icon: CalendarCheck, path: '/staff/attendance', color: '#16A34A' },
     { label: 'Marks & CGPA', icon: GraduationCap, path: '/staff/marks', color: '#8B5CF6' },
     { label: 'Leave Approvals', icon: FileText, path: '/staff/leaves', color: '#F59E0B' },
+    { label: 'Study Materials & Notes', icon: BookOpen, path: '/staff/materials', color: '#06B6D4' },
   ];
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-xl mx-auto animate-fade-in">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-xl mx-auto animate-fade-in pb-32 md:pb-16 select-none">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#172033]">Staff Options</h1>
         <p className="text-sm text-[#6B7280] mt-1">Profile and quick staff actions</p>

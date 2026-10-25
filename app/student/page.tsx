@@ -35,7 +35,7 @@ export default function StudentHome() {
   ];
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-5xl mx-auto animate-fade-in">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-5xl mx-auto animate-fade-in pb-32 md:pb-16 select-none">
       <div className="flex items-start justify-between mb-6">
         <div>
           <p className="text-sm text-[#6B7280]">{greeting},</p>

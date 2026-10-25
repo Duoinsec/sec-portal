@@ -38,7 +38,7 @@ export default function StudentMore() {
   ];
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-2xl mx-auto animate-fade-in">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-2xl mx-auto animate-fade-in pb-32 md:pb-16 select-none">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-[#172033]">More Options</h1>
         <p className="text-sm text-[#6B7280] mt-1">Quick navigation and profile overview</p>

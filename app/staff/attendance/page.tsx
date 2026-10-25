@@ -110,7 +110,7 @@ export default function StaffAttendance() {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <div className="px-4 py-6 md:px-8 md:py-8 max-w-5xl mx-auto animate-fade-in">
+    <div className="px-4 py-6 md:px-8 md:py-8 max-w-5xl mx-auto animate-fade-in pb-32 md:pb-16 select-none">
       {showModal && (
         <MarkAttendanceModal students={students} departmentId={staff?.department_id || ''} onClose={() => setShowModal(false)} />
       )}
