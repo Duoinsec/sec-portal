@@ -10,7 +10,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: string | null; profile?: Profile | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
@@ -20,7 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   session: null,
   profile: null,
   loading: true,
-  signIn: async () => ({ error: null }),
+  signIn: async () => ({ error: null, profile: null }),
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -81,9 +81,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
-    return { error: null };
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { error: error.message, profile: null };
+
+    if (data?.user) {
+      setSession(data.session);
+      setUser(data.user);
+
+      let fetchedProfile: Profile | null = null;
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .maybeSingle();
+        fetchedProfile = profileData as Profile | null;
+      } catch (err) {
+        console.error('Error fetching profile during signIn:', err);
+      }
+
+      if (!fetchedProfile) {
+        const lowerEmail = email.toLowerCase();
+        const metaRole = (data.user.user_metadata?.role as UserRole) ||
+          (lowerEmail.includes('admin') ? 'ADMIN' : lowerEmail.includes('staff') ? 'STAFF' : 'STUDENT');
+        fetchedProfile = {
+          id: data.user.id,
+          email: data.user.email || email,
+          full_name: data.user.user_metadata?.full_name || email.split('@')[0],
+          role: metaRole,
+          avatar_url: null,
+          phone: null,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+
+      setProfile(fetchedProfile);
+      setLoading(false);
+      return { error: null, profile: fetchedProfile };
+    }
+
+    return { error: null, profile: null };
   };
 
   const signOut = async () => {

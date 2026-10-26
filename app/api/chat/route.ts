@@ -4,9 +4,155 @@ import type { ChatCompletionMessageParam } from 'groq-sdk/resources/chat/complet
 import { checkRateLimit, validateAndSanitizeInput } from '@/lib/rate-limiter';
 import { generateVisualForQuery } from '@/lib/image-service';
 
+export const dynamic = 'force-dynamic';
+
 const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
+  apiKey: process.env.GROQ_API_KEY || '',
 });
+
+async function generateWithGemini(
+  systemContent: string,
+  messages: any[],
+  apiKey: string
+): Promise<string | null> {
+  const contents = messages.map((m: any) => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: String(m.content || '') }],
+  }));
+
+  const payload = {
+    system_instruction: {
+      parts: [{ text: systemContent }],
+    },
+    contents,
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.5,
+      maxOutputTokens: 2500,
+    },
+  };
+
+  const models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash'];
+  for (const model of models) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          return text;
+        }
+      } else {
+        const errText = await res.text();
+        console.warn(`[Gemini API Warning - ${model}]`, res.status, errText);
+      }
+    } catch (err: any) {
+      console.warn(`[Gemini API Network Exception - ${model}]`, err?.message || err);
+    }
+  }
+  return null;
+}
+
+export interface PixabayImage {
+  id: number;
+  tags: string;
+  preview_url: string;
+  web_format_url: string;
+  large_image_url: string;
+  page_url: string;
+  user: string;
+  explanation?: string | null;
+}
+
+async function fetchPixabayImages(query: string, limit = 4): Promise<{ images: PixabayImage[]; error?: string }> {
+  const pixabayKey = process.env.PIXABAY_API_KEY;
+  if (!pixabayKey) {
+    return {
+      images: [],
+      error: 'PIXABAY_API_KEY is not configured in server environment or Supabase Secrets.',
+    };
+  }
+
+  try {
+    const cleanQuery = query
+      .replace(/explain|tell me about|what is|how to|can you|describe|show me|architecture of|diagram of/gi, '')
+      .trim() || query;
+
+    const url = new URL('https://pixabay.com/api/');
+    url.searchParams.set('key', pixabayKey);
+    url.searchParams.set('q', cleanQuery.substring(0, 100));
+    url.searchParams.set('image_type', 'all');
+    url.searchParams.set('safesearch', 'true');
+    url.searchParams.set('per_page', String(limit));
+    url.searchParams.set('orientation', 'horizontal');
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch(url.toString(), { signal: controller.signal }).finally(() => clearTimeout(timeout));
+    if (!res.ok) {
+      return { images: [], error: `Pixabay API returned status ${res.status}` };
+    }
+
+    const data = await res.json();
+    const hits = Array.isArray(data.hits) ? data.hits : [];
+    const images: PixabayImage[] = hits.map((hit: any) => ({
+      id: hit.id,
+      tags: hit.tags || '',
+      preview_url: hit.previewURL || hit.webformatURL,
+      web_format_url: hit.webformatURL,
+      large_image_url: hit.largeImageURL || hit.webformatURL,
+      page_url: hit.pageURL,
+      user: hit.user || 'Pixabay Contributor',
+    }));
+
+    return { images };
+  } catch (err: any) {
+    return { images: [], error: err?.message || 'Failed to search Pixabay images' };
+  }
+}
+
+async function explainImagesWithGemini(
+  images: PixabayImage[],
+  query: string,
+  apiKey: string
+): Promise<void> {
+  if (!apiKey || images.length === 0) return;
+  const targetImages = images.slice(0, 2);
+  for (const img of targetImages) {
+    try {
+      const prompt = `You are an engineering professor at Sengunthar Engineering College. In 1 or 2 concise, clear sentences, explain how an image depicting "${img.tags}" connects with the student's question on "${query}". Highlight the academic concept.`;
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: { maxOutputTokens: 140, temperature: 0.4 },
+          }),
+        }
+      );
+      if (res.ok) {
+        const d = await res.json();
+        const exp = d.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (exp) {
+          img.explanation = exp;
+        }
+      }
+    } catch {
+      // Continue if explanation fails
+    }
+  }
+}
 
 const SYSTEM_PROMPT = `You are SEC AI Assistant — the official AI chatbot for Sengunthar Engineering College (SEC), Tiruchengode, Tamil Nadu.
 Project: "AI-Powered College Assistant Chatbot using NLP". Affiliated to Anna University, NAAC 'A' accredited.
@@ -39,11 +185,21 @@ Set "visual_required": true ONLY when the answer benefits from a visual explanat
 - When student asks "Explain the architecture of our College Assistant Chatbot", "Show the architecture", "Campus layout", "Placement process flowchart", "AI & DS model pipeline", etc.
 For normal conversational, factual, or simple text questions (e.g. "What is the passing mark?", "Who is the HOD?"), set "visual_required": false.
 
+PEDAGOGICAL TEACHING STYLE (ALWAYS USE PRACTICAL SAMPLES & EXAMPLES):
+- For EVERY concept or technical topic, ALWAYS include an intuitive, real-world **Practical Sample / Analogy** (e.g. comparing Neural Networks to a medical diagnosis workflow or facial recognition at an airport; comparing B-Trees to a library indexing system; comparing Transformers to electrical grid distribution).
+- When explaining algorithms, coding, or mathematical concepts, provide a concise **Working Code / Calculation Sample** (e.g., Python snippet, mathematical step with sample numbers).
+- Use clear visual structuring:
+  1. 📌 **Concept Definition** (Clear & concise)
+  2. 💡 **Real-World Sample / Relatable Analogy** (Real-life practical scenario)
+  3. ⚙️ **Architecture / Step-by-Step Breakdown**
+  4. 💻 **Sample Implementation / Code Example** (if relevant)
+  5. 🎓 **Exam / Viva Key Takeaway**
+
 MANDATORY OUTPUT FORMAT:
 You MUST ALWAYS respond with a VALID JSON OBJECT matching this exact structure:
 
 {
-  "answer": "Clear, comprehensive, and well-structured answer for the student using bullet points, headers, and friendly tone.",
+  "answer": "Clear, comprehensive, and well-structured answer for the student using bullet points, headers, bold text, and ALWAYS featuring a clear Real-World Sample / Example section.",
   "visual_required": true or false,
   "visual_type": "system_architecture" | "educational_diagram" | "workflow" | "flowchart" | "process_diagram" | "infographic" | "concept_illustration" | "chart" | null,
   "visual_prompt": "Detailed descriptive visual synthesis prompt describing what the diagram or visual illustrates" | null,
@@ -78,9 +234,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    if (!process.env.GROQ_API_KEY) {
+    const geminiKey = process.env.GEMINI_API_KEY || 'AIzaSyDuKXduKLosFrJS_yEzDGqKxFm1kF9kFAA';
+
+    if (!geminiKey && !process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        { error: 'GROQ_API_KEY is not configured in server environment.' },
+        { error: 'AI API key is not configured in server environment.' },
         { status: 500 }
       );
     }
@@ -91,39 +249,45 @@ export async function POST(req: NextRequest) {
       systemContent += `\n\nStudent Profile Context:\n${JSON.stringify(studentContext, null, 2)}`;
     }
 
-    // Format chat history
-    const formattedMessages: ChatCompletionMessageParam[] = messages.map((m: any) => ({
-      role: (m.role === 'assistant' ? 'assistant' : 'user') as 'assistant' | 'user',
-      content: String(m.content || ''),
-    }));
-
-    // 4. Groq Completion with JSON Mode + Fallback
+    // 4. Primary: Generate using Google Gemini
     let rawContent = '{}';
-    try {
-      const completion = await groq.chat.completions.create({
-        model: 'openai/gpt-oss-20b',
-        messages: [
-          { role: 'system', content: systemContent },
-          ...formattedMessages,
-        ],
-        response_format: { type: 'json_object' },
-        max_tokens: 2200,
-        temperature: 0.5,
-      });
-      rawContent = completion.choices[0]?.message?.content || '{}';
-    } catch (groqErr: any) {
-      console.warn('[Groq JSON Mode Warning] Retrying without strict json_object:', groqErr?.message);
-      // Fallback: call without strict json_object to guarantee answer delivery
-      const fallbackCompletion = await groq.chat.completions.create({
-        model: 'openai/gpt-oss-20b',
-        messages: [
-          { role: 'system', content: systemContent },
-          ...formattedMessages,
-        ],
-        max_tokens: 2000,
-        temperature: 0.5,
-      });
-      rawContent = fallbackCompletion.choices[0]?.message?.content || '{}';
+    let providerUsed = 'unknown';
+
+    if (geminiKey) {
+      try {
+        const geminiResult = await generateWithGemini(systemContent, messages, geminiKey);
+        if (geminiResult) {
+          rawContent = geminiResult;
+          providerUsed = 'gemini';
+        }
+      } catch (geminiErr: any) {
+        console.warn('[Gemini Call Warning] Falling back to secondary engine:', geminiErr?.message);
+      }
+    }
+
+    // Secondary fallback: Groq (if Gemini was not successful and Groq is configured)
+    if (providerUsed !== 'gemini' && process.env.GROQ_API_KEY) {
+      try {
+        const formattedMessages: ChatCompletionMessageParam[] = messages.map((m: any) => ({
+          role: (m.role === 'assistant' ? 'assistant' : 'user') as 'assistant' | 'user',
+          content: String(m.content || ''),
+        }));
+
+        const completion = await groq.chat.completions.create({
+          model: 'openai/gpt-oss-20b',
+          messages: [
+            { role: 'system', content: systemContent },
+            ...formattedMessages,
+          ],
+          response_format: { type: 'json_object' },
+          max_tokens: 2200,
+          temperature: 0.5,
+        });
+        rawContent = completion.choices[0]?.message?.content || '{}';
+        providerUsed = 'groq';
+      } catch (groqErr: any) {
+        console.warn('[Groq Fallback Warning]', groqErr?.message);
+      }
     }
 
     let parsedResponse: any;
@@ -152,9 +316,26 @@ export async function POST(req: NextRequest) {
       ? parsedResponse.sources
       : ['College Knowledge Base'];
 
-    // 5. Visual Pipeline
+
+    // 5. Real Pixabay Images Search + Gemini Explanation
+    let realImages: PixabayImage[] = [];
+    let pixabayError: string | null = null;
+    try {
+      const pixabayResult = await fetchPixabayImages(validation.sanitized, 4);
+      realImages = pixabayResult.images;
+      pixabayError = pixabayResult.error || null;
+
+      if (realImages.length > 0 && geminiKey) {
+        await explainImagesWithGemini(realImages, validation.sanitized, geminiKey);
+      }
+    } catch (pixErr: any) {
+      console.warn('[Pixabay Pipeline Warning]', pixErr?.message || pixErr);
+      pixabayError = pixErr?.message || 'Error loading Pixabay images';
+    }
+
+    // 6. Visual Pipeline (AI Generated Illustration)
     let visualUrl: string | null = null;
-    let visualLabel = 'AI Generated Visual';
+    let visualLabel = 'AI Generated Educational Illustration';
 
     if (visualRequired && visualType) {
       try {
@@ -164,16 +345,20 @@ export async function POST(req: NextRequest) {
           validation.sanitized
         );
         visualUrl = visualResult.visual_url;
-        visualLabel = visualResult.source_label || 'AI Generated Visual';
+        visualLabel = visualResult.source_label || 'AI Generated Educational Illustration';
 
         if (visualResult.error) {
           console.warn('[Image Generation Notice]', visualResult.error);
         }
       } catch (visErr: any) {
-        // Safe logging: never break chatbot if image generation fails
         console.error('[Visual Generation Error]', visErr?.message || visErr);
         visualUrl = null;
       }
+    }
+
+    const allSources = [...sources];
+    if (realImages.length > 0 && !allSources.includes('Pixabay API')) {
+      allSources.push('Pixabay API');
     }
 
     return NextResponse.json({
@@ -184,7 +369,9 @@ export async function POST(req: NextRequest) {
       visual_prompt: visualPrompt,
       visual_url: visualUrl,
       visual_label: visualLabel,
-      sources,
+      real_images: realImages,
+      pixabay_error: pixabayError,
+      sources: allSources,
     });
   } catch (error: any) {
     console.error('[Groq Chat Error]', error?.message || error);

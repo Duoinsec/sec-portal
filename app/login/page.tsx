@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
@@ -30,24 +30,33 @@ export default function LoginPage() {
   const [resetMode, setResetMode] = useState(false);
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (profile) {
+      const route =
+        profile.role === 'ADMIN' ? '/admin' : profile.role === 'STAFF' ? '/staff' : '/student';
+      router.replace(route);
+    }
+  }, [profile, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
     setLoading(true);
-    const { error } = await signIn(email, password);
+    const { error, profile: loggedProfile } = await signIn(email, password);
     setLoading(false);
     if (error) {
       toast.error(error);
       return;
     }
     toast.success('Welcome back!');
-    if (profile) {
-      const route =
-        profile.role === 'ADMIN' ? '/admin' : profile.role === 'STAFF' ? '/staff' : '/student';
-      router.replace(route);
-    } else {
-      router.replace('/');
-    }
+    const activeUser = loggedProfile || profile;
+    const targetRoute =
+      activeUser?.role === 'ADMIN'
+        ? '/admin'
+        : activeUser?.role === 'STAFF'
+        ? '/staff'
+        : '/student';
+    router.replace(targetRoute);
   };
 
   const handleReset = async (e: React.FormEvent) => {
@@ -95,8 +104,7 @@ export default function LoginPage() {
           {/* Header & Logo */}
           <div className="flex flex-col items-center text-center mb-6">
             {/* College Emblem Frame */}
-            <div className="relative mb-3.5 group">
-              <div className="absolute -inset-1.5 rounded-2xl bg-gradient-to-tr from-[#1468D5] via-[#2563eb] to-[#38bdf8] opacity-75 blur-sm transition-all duration-300 group-hover:opacity-100" />
+            <div className="relative mb-3.5">
               <div className="relative flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-md border border-slate-100 overflow-hidden">
                 <img
                   src="/images/sec-logo.png"

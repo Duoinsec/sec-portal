@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useStudentProfile, useAttendanceSummary, useMarks, usePlacements } from '@/lib/hooks';
 import { Bot, Send, User, Zap, Plus, Image as ImageIcon, FileText, X } from 'lucide-react';
-import { ChatMessageContent } from '@/components/chat-message-content';
+import { ChatMessageContent, VisualMetadata } from '@/components/chat-message-content';
 
 interface FileAttachment {
   id: string;
@@ -20,14 +20,7 @@ interface Message {
   content: string;
   time: string;
   attachments?: FileAttachment[];
-  visualData?: {
-    visual_required?: boolean;
-    visual_type?: string | null;
-    visual_prompt?: string | null;
-    visual_url?: string | null;
-    visual_label?: string | null;
-    sources?: string[];
-  };
+  visualData?: VisualMetadata;
 }
 
 export default function StudentChat() {
@@ -208,12 +201,14 @@ export default function StudentChat() {
       if (!res.ok) throw new Error(data.error || 'Failed to get AI response');
 
       const answerText = data.answer || data.reply || '';
-      const visualData = {
+      const visualData: VisualMetadata = {
         visual_required: data.visual_required,
         visual_type: data.visual_type,
         visual_prompt: data.visual_prompt,
         visual_url: data.visual_url,
         visual_label: data.visual_label,
+        real_images: data.real_images || [],
+        pixabay_error: data.pixabay_error || null,
         sources: data.sources,
       };
 
@@ -228,6 +223,53 @@ export default function StudentChat() {
         },
       ]);
     } catch (err: any) {
+      console.warn('Backend API route failed, attempting direct Gemini API connection:', err);
+      try {
+        const geminiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || 'AIzaSyDuKXduKLosFrJS_yEzDGqKxFm1kF9kFAA';
+        const contents = updatedMessages.map((m) => ({
+          role: m.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: m.content }],
+        }));
+
+        const sysPrompt = `You are SEC AI Assistant — the official AI chatbot for Sengunthar Engineering College (SEC), Tiruchengode, Tamil Nadu. Affiliated to Anna University, NAAC 'A' accredited. Provide helpful, structured, and friendly answers with bullet points and clear information. For any concept or question, ALWAYS include a clear Real-World Sample / Practical Analogy and Sample Code / Steps to make it easily understandable for engineering students.`;
+
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${geminiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: sysPrompt }] },
+              contents,
+              generationConfig: { temperature: 0.5 },
+            }),
+          }
+        );
+
+        if (geminiRes.ok) {
+          const gData = await geminiRes.json();
+          const geminiAnswer = gData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          if (geminiAnswer) {
+            setMessages((prev) => [
+              ...prev,
+              {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: geminiAnswer,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                visualData: {
+                  visual_required: false,
+                  sources: ['SEC Knowledge Base (Google Gemini)'],
+                },
+              },
+            ]);
+            return;
+          }
+        }
+      } catch (geminiFallbackErr) {
+        console.error('Gemini direct fallback error:', geminiFallbackErr);
+      }
+
       setHasError(true);
       setMessages((prev) => [
         ...prev,
@@ -262,11 +304,10 @@ export default function StudentChat() {
         </div>
       )}
 
-      {/* Messages area with scrollbar completely hidden */}
+      {/* Messages scrollable area */}
       {messages.length > 0 && (
         <div 
-          className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1 mb-2 scrollbar-hide"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex-1 min-h-0 overflow-y-auto space-y-4 pr-1.5 mb-2 scroll-smooth"
         >
           {messages.map((msg) => (
             <div key={msg.id} className={`flex items-start gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>

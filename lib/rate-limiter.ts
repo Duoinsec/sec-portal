@@ -11,11 +11,11 @@ const rateLimitMap = new Map<string, RateLimitRecord>();
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
-    for (const [key, value] of rateLimitMap.entries()) {
+    rateLimitMap.forEach((value, key) => {
       if (now > value.resetTime) {
         rateLimitMap.delete(key);
       }
-    }
+    });
   }, 5 * 60 * 1000);
 }
 

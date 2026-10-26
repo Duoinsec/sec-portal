@@ -18,6 +18,8 @@
 # misc
 .DS_Store
 *.pem
+*.apk
+local.properties
 
 # debug
 npm-debug.log*

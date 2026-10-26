@@ -20,6 +20,7 @@ export interface Department {
   hod_name: string | null;
   description: string | null;
   is_active: boolean;
+  created_at?: string;
 }
 
 export interface Subject {
@@ -31,6 +32,7 @@ export interface Subject {
   semester: number;
   credits: number;
   is_active: boolean;
+  created_at?: string;
 }
 
 export interface Student {

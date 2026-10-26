@@ -336,86 +336,46 @@ export function BottomNav({ role }: { role: 'STUDENT' | 'STAFF' | 'ADMIN' }) {
   };
 
   return (
-    <nav className="shrink-0 z-40 md:hidden select-none px-3.5 pb-2 pt-7 bg-transparent">
-      {/* Floating White Card */}
-      <div
-        className="relative bg-white rounded-[28px] shadow-[0_10px_35px_rgba(15,23,42,0.12)] border border-slate-100/90 pt-3 pb-2 px-1"
-        style={{ paddingBottom: 'max(0.6rem, env(safe-area-inset-bottom))' }}
-      >
-        {/* Elevated Curved Hill & Bubble for Active Tab (Static, No Sliding Animation) */}
-        <div
-          className="absolute top-0 bottom-0 pointer-events-none flex flex-col items-center"
-          style={{
-            left: `${(currentIndex / nav.length) * 100}%`,
-            width: `${100 / nav.length}%`,
-          }}
-        >
-          {/* Smooth SVG curved hill connecting seamlessly to the white bar */}
-          <div className="absolute -top-[21px] w-[92px] h-[24px] pointer-events-none flex justify-center">
-            <svg
-              viewBox="0 0 96 26"
-              className="w-[92px] h-[24px] fill-white filter drop-shadow-[0_-3px_4px_rgba(0,0,0,0.04)]"
-              preserveAspectRatio="none"
+    <nav
+      className="shrink-0 z-40 md:hidden select-none w-full bg-[#0b1f3d] border-t border-[#16335e] shadow-[0_-4px_20px_rgba(0,0,0,0.25)]"
+      style={{ paddingBottom: 'max(0.6rem, env(safe-area-inset-bottom))' }}
+    >
+      <div className="grid grid-flow-col auto-cols-fr items-center px-2 py-2">
+        {nav.map((item, index) => {
+          const isActive = index === currentIndex;
+          return (
+            <button
+              key={item.path}
+              onClick={() => handleNav(item.path)}
+              className={cn(
+                'group relative flex flex-col items-center justify-center py-1.5 px-1 select-none transition-all duration-200 focus:outline-none',
+                isActive ? 'text-white' : 'text-white/70 hover:text-white'
+              )}
             >
-              <path d="M 0 26 C 16 26 23 18 29 10 C 35 2 41 0 48 0 C 55 0 61 2 67 10 C 73 18 80 26 96 26 Z" />
-            </svg>
-          </div>
-
-          {/* Elevated Circular Badge (As shown in the sample image) */}
-          <div className="absolute -top-[28px] flex items-center justify-center">
-            <div className="w-[56px] h-[56px] rounded-full bg-white p-[3px] shadow-[0_6px_16px_rgba(79,70,229,0.22)] flex items-center justify-center">
-              <div className="w-full h-full rounded-full bg-[#EDE9FE] flex items-center justify-center text-[#5B50E8]">
-                {activeItem && (
-                  <NavIcon
-                    icon={activeItem.icon}
-                    isActive={true}
-                    size={24}
-                    className="text-[#5B50E8]"
-                  />
+              <div
+                className={cn(
+                  'flex items-center justify-center px-4 py-1 rounded-full transition-all duration-200',
+                  isActive ? 'bg-white/15 shadow-xs' : 'bg-transparent'
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Buttons Grid */}
-        <div className="relative z-10 grid grid-flow-col auto-cols-fr items-center">
-          {nav.map((item, index) => {
-            const isActive = index === currentIndex;
-            return (
-              <button
-                key={item.path}
-                onClick={() => handleNav(item.path)}
-                className="group relative flex flex-col items-center justify-end h-[50px] pb-1 px-1 select-none focus:outline-none"
               >
-                {/* Inactive tab: icon at normal level, gray label */}
-                {!isActive ? (
-                  <div className="flex flex-col items-center justify-center h-full">
-                    <NavIcon
-                      icon={item.icon}
-                      isActive={false}
-                      size={21}
-                      className="text-slate-400 group-hover:text-slate-600"
-                    />
-                    <span className="text-[10px] font-medium text-slate-400 group-hover:text-slate-600 tracking-tight leading-none mt-1">
-                      {item.label}
-                    </span>
-                  </div>
-                ) : (
-                  /* Active tab: space for elevated circle above, bold dark label below */
-                  <div className="flex flex-col items-center justify-end h-full">
-                    <span className="text-[11px] font-bold text-slate-900 tracking-tight leading-none">
-                      {item.label}
-                    </span>
-                  </div>
+                <NavIcon
+                  icon={item.icon}
+                  isActive={isActive}
+                  size={22}
+                  className="text-white"
+                />
+              </div>
+              <span
+                className={cn(
+                  'text-[11px] tracking-tight leading-none mt-1 transition-all duration-200',
+                  isActive ? 'font-bold text-white' : 'font-medium text-white/75'
                 )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Home Indicator Bar Pill (from sample image) */}
-        <div className="w-28 h-1 bg-slate-300/80 rounded-full mx-auto mt-2" />
+              >
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </nav>
   );
