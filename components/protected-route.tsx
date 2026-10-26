@@ -14,6 +14,11 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
 
     if (!profile) {
       router.replace('/login/');
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login/') {
+          window.location.replace('/login/');
+        }
+      }, 150);
       return;
     }
 
@@ -23,7 +28,13 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
         STAFF: '/staff/',
         STUDENT: '/student/',
       };
-      router.replace(dashboardMap[profile.role] || '/login/');
+      const dest = dashboardMap[profile.role] || '/login/';
+      router.replace(dest);
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname !== dest) {
+          window.location.replace(dest);
+        }
+      }, 150);
     }
   }, [profile, loading, router, allowedRoles?.join(',')]);
 

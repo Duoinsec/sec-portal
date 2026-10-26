@@ -1,36 +1,92 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowRight } from 'lucide-react';
 
 export default function Home() {
   const { profile, loading } = useAuth();
   const router = useRouter();
+  const [showManualBtn, setShowManualBtn] = useState(false);
 
   useEffect(() => {
-    // 1. Safety redirect timeout: Never let the screen hang on loading
-    const safetyTimer = setTimeout(() => {
-      if (!profile) {
-        router.replace('/login/');
+    const navigate = (target: string) => {
+      try {
+        router.replace(target);
+      } catch (err) {
+        console.warn('router.replace exception:', err);
       }
-    }, 1500);
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          if (window.location.pathname !== target) {
+            window.location.replace(target);
+          }
+        }, 120);
+      }
+    };
 
-    if (loading) return;
-
-    if (profile) {
-      const route = profile.role === 'ADMIN' ? '/admin/' : profile.role === 'STAFF' ? '/staff/' : '/student/';
-      router.replace(route);
+    if (!loading) {
+      if (profile) {
+        const route =
+          profile.role === 'ADMIN'
+            ? '/admin/'
+            : profile.role === 'STAFF'
+            ? '/staff/'
+            : '/student/';
+        navigate(route);
+      } else {
+        navigate('/login/');
+      }
     } else {
-      router.replace('/login/');
-    }
+      // Safety fail-safe: Never wait more than 900ms on initial boot
+      const safety = setTimeout(() => {
+        let cached = null;
+        try {
+          const raw = localStorage.getItem('sec_cached_profile');
+          if (raw) cached = JSON.parse(raw);
+        } catch (_) {}
 
-    return () => clearTimeout(safetyTimer);
+        if (cached) {
+          const route =
+            cached.role === 'ADMIN'
+              ? '/admin/'
+              : cached.role === 'STAFF'
+              ? '/staff/'
+              : '/student/';
+          navigate(route);
+        } else {
+          navigate('/login/');
+        }
+      }, 900);
+
+      const manualTimer = setTimeout(() => {
+        setShowManualBtn(true);
+      }, 1500);
+
+      return () => {
+        clearTimeout(safety);
+        clearTimeout(manualTimer);
+      };
+    }
   }, [profile, loading, router]);
+
+  const handleManualNav = () => {
+    if (typeof window !== 'undefined') {
+      const target = profile
+        ? profile.role === 'ADMIN'
+          ? '/admin/'
+          : profile.role === 'STAFF'
+          ? '/staff/'
+          : '/student/'
+        : '/login/';
+      window.location.replace(target);
+    }
+  };
 
   return (
     <div
+      onClick={handleManualNav}
       style={{
         display: 'flex',
         minHeight: '100vh',
@@ -39,8 +95,9 @@ export default function Home() {
         justifyContent: 'center',
         backgroundColor: '#F8FBFF',
         fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        cursor: 'pointer',
       }}
-      className="flex min-h-screen items-center justify-center bg-[#F8FBFF]"
+      className="flex min-h-screen items-center justify-center bg-[#F8FBFF] cursor-pointer"
     >
       <div
         style={{
@@ -62,7 +119,7 @@ export default function Home() {
             justifyContent: 'center',
             boxShadow: '0 10px 25px -5px rgba(20, 104, 213, 0.4)',
           }}
-          className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1468D5] to-[#123B73] shadow-lg"
+          className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1468D5] to-[#123B73] shadow-lg transition-transform active:scale-95"
         >
           <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '18px' }} className="text-white font-bold text-lg">
             SEC
@@ -72,6 +129,20 @@ export default function Home() {
         <p style={{ fontSize: '14px', color: '#6B7280', margin: 0 }} className="text-sm text-[#6B7280]">
           Loading SEC AI Assistant...
         </p>
+
+        {showManualBtn && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleManualNav();
+            }}
+            className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#1468D5] text-white text-xs font-semibold shadow-md active:scale-95 transition-all"
+          >
+            <span>Continue to Login</span>
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
     </div>
   );

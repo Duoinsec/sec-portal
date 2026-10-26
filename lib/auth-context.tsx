@@ -28,22 +28,39 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('sec_cached_profile');
+        if (cached) return JSON.parse(cached);
+      } catch (_) {}
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        // If we already have a cached profile or if we know for sure there is no supabase token, don't block
+        const cached = localStorage.getItem('sec_cached_profile');
+        if (cached) return false;
+      } catch (_) {}
+    }
+    return true;
+  });
 
   useEffect(() => {
     let mounted = true;
 
     const initAuth = async () => {
       try {
-        // Enforce 2.5s maximum timeout so loading never hangs when offline or on mobile
+        // Enforce 1000ms maximum timeout so loading never hangs when offline or on mobile
         const sessionPromise = supabase.auth.getSession().catch((err) => {
           console.warn('[Auth] getSession warning:', err);
           return { data: { session: null }, error: err };
         });
 
         const timeoutPromise = new Promise<{ data: { session: null }; error: null }>((resolve) =>
-          setTimeout(() => resolve({ data: { session: null }, error: null }), 2500)
+          setTimeout(() => resolve({ data: { session: null }, error: null }), 1000)
         );
 
         const result = await Promise.race([sessionPromise, timeoutPromise]);
@@ -61,9 +78,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .select('*')
               .eq('id', existingSession.user.id)
               .maybeSingle();
-            if (mounted) setProfile(data as Profile | null);
+            if (mounted && data) {
+              setProfile(data as Profile);
+              try {
+                localStorage.setItem('sec_cached_profile', JSON.stringify(data));
+              } catch (_) {}
+            }
           } catch (profileErr) {
             console.warn('[Auth] Error fetching profile:', profileErr);
+          }
+        } else {
+          // If no active session, clear profile
+          if (mounted) {
+            setProfile(null);
+            try {
+              localStorage.removeItem('sec_cached_profile');
+            } catch (_) {}
           }
         }
       } catch (err) {
@@ -88,9 +118,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .select('*')
               .eq('id', newSession.user.id)
               .maybeSingle();
-            if (mounted) setProfile(data as Profile | null);
+            if (mounted) {
+              setProfile(data as Profile | null);
+              if (data) {
+                try {
+                  localStorage.setItem('sec_cached_profile', JSON.stringify(data));
+                } catch (_) {}
+              }
+            }
           } else {
-            if (mounted) setProfile(null);
+            if (mounted) {
+              setProfile(null);
+              try {
+                localStorage.removeItem('sec_cached_profile');
+              } catch (_) {}
+            }
           }
         } catch (stateErr) {
           console.warn('[Auth] onAuthStateChange warning:', stateErr);
@@ -166,6 +208,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         setProfile(fetchedProfile);
+        try {
+          localStorage.setItem('sec_cached_profile', JSON.stringify(fetchedProfile));
+        } catch (_) {}
         setLoading(false);
         return { error: null, profile: fetchedProfile };
       }
@@ -178,6 +223,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    try {
+      localStorage.removeItem('sec_cached_profile');
+    } catch (_) {}
     await supabase.auth.signOut();
     setProfile(null);
     setUser(null);
