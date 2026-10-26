@@ -17,14 +17,45 @@ function AddPlacementModal({ onClose, onSuccess }: { onClose: () => void; onSucc
     if (!form.company_name.trim() || !form.role.trim()) { setError('Company name and role are required'); return; }
     setSaving(true); setError('');
     try {
-      const { error: err } = await supabase.from('placements').insert({
+      const { data: inserted, error: err } = await supabase.from('placements').insert({
         company_name: form.company_name, role: form.role, location: form.location || null,
         package_lpa: form.package_lpa ? Number(form.package_lpa) : null,
         min_cgpa: Number(form.min_cgpa), max_backlogs: Number(form.max_backlogs),
         description: form.description || null,
         deadline: form.deadline || null, is_active: true,
-      });
+      }).select().single();
       if (err) throw err;
+
+      // Broadcast to students for outside device alerts
+      try {
+        const pkg = form.package_lpa ? ` | ${form.package_lpa} LPA` : '';
+        const channel = supabase.channel('sec_campus_realtime_updates');
+        await channel.send({
+          type: 'broadcast',
+          event: 'campus_broadcast',
+          payload: {
+            title: `💼 New Placement Drive: ${form.company_name}`,
+            body: `Role: ${form.role}${pkg} • Apply before ${form.deadline || 'deadline'}!`,
+            type: 'placement',
+            url: '/student/placements/',
+          },
+        });
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('sec:campus-update', {
+              detail: {
+                title: `💼 New Placement Drive: ${form.company_name}`,
+                body: `Role: ${form.role}${pkg} • Apply before ${form.deadline || 'deadline'}!`,
+                type: 'placement',
+                url: '/student/placements/',
+              },
+            })
+          );
+        }
+      } catch (bcErr) {
+        console.warn('[Staff Placement] Broadcast notice:', bcErr);
+      }
+
       onSuccess(); onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to add placement drive');

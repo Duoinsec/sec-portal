@@ -18,11 +18,41 @@ function AddAnnouncementModal({ onClose, onSuccess }: { onClose: () => void; onS
     if (!form.title.trim() || !form.content.trim()) { setError('Title and content are required'); return; }
     setSaving(true); setError('');
     try {
-      const { error: err } = await supabase.from('announcements').insert({
+      const { data: inserted, error: err } = await supabase.from('announcements').insert({
         title: form.title, content: form.content,
         is_pinned: form.is_pinned, publish_at: new Date().toISOString(),
-      });
+      }).select().single();
       if (err) throw err;
+
+      // Broadcast to all students for outside device notifications
+      try {
+        const channel = supabase.channel('sec_campus_realtime_updates');
+        await channel.send({
+          type: 'broadcast',
+          event: 'campus_broadcast',
+          payload: {
+            title: `📢 New Circular: ${form.title}`,
+            body: form.content.slice(0, 120),
+            type: 'announcement',
+            url: '/student/announcements/',
+          },
+        });
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('sec:campus-update', {
+              detail: {
+                title: `📢 New Circular: ${form.title}`,
+                body: form.content.slice(0, 120),
+                type: 'announcement',
+                url: '/student/announcements/',
+              },
+            })
+          );
+        }
+      } catch (bcErr) {
+        console.warn('[Staff Announcement] Broadcast notice:', bcErr);
+      }
+
       onSuccess(); onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to create announcement');

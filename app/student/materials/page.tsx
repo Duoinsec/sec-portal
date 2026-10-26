@@ -130,6 +130,35 @@ function UploadMaterialModal({
         file_type: form.file_type,
         is_active: true,
       });
+
+      // Broadcast to students for outside device alerts
+      try {
+        const channel = supabase.channel('sec_campus_realtime_updates');
+        await channel.send({
+          type: 'broadcast',
+          event: 'campus_broadcast',
+          payload: {
+            title: `📚 New Study Material: ${form.title.trim()}`,
+            body: `[${form.department_code} • ${form.subject_code || 'Notes'}] New academic resource uploaded!`,
+            type: 'material',
+            url: '/student/materials/',
+          },
+        });
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('sec:campus-update', {
+              detail: {
+                title: `📚 New Study Material: ${form.title.trim()}`,
+                body: `[${form.department_code} • ${form.subject_code || 'Notes'}] New academic resource uploaded!`,
+                type: 'material',
+                url: '/student/materials/',
+              },
+            })
+          );
+        }
+      } catch (bcErr) {
+        console.warn('[Material Upload] Broadcast notice:', bcErr);
+      }
     } catch {
       // proceed with local state append
     }
