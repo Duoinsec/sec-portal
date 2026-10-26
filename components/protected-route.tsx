@@ -2,15 +2,20 @@
 
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { profile, loading } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || loading) return;
 
     if (!profile) {
       router.replace('/login/');
@@ -36,9 +41,9 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
         }
       }, 150);
     }
-  }, [profile, loading, router, allowedRoles?.join(',')]);
+  }, [profile, loading, router, mounted, allowedRoles?.join(',')]);
 
-  if (loading) {
+  if (!mounted || loading) {
     return (
       <div
         style={{

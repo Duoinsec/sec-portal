@@ -28,28 +28,25 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('sec_cached_profile');
-        if (cached) return JSON.parse(cached);
-      } catch (_) {}
-    }
-    return null;
-  });
-  const [loading, setLoading] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        // If we already have a cached profile or if we know for sure there is no supabase token, don't block
-        const cached = localStorage.getItem('sec_cached_profile');
-        if (cached) return false;
-      } catch (_) {}
-    }
-    return true;
-  });
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
+
+    // Fast synchronous read from localStorage right after hydration
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('sec_cached_profile');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (mounted) {
+            setProfile(parsed);
+            setLoading(false);
+          }
+        }
+      } catch (_) {}
+    }
 
     const initAuth = async () => {
       try {
