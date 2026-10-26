@@ -4,8 +4,6 @@ import type { ChatCompletionMessageParam } from 'groq-sdk/resources/chat/complet
 import { checkRateLimit, validateAndSanitizeInput } from '@/lib/rate-limiter';
 import { generateVisualForQuery } from '@/lib/image-service';
 
-export const dynamic = 'force-dynamic';
-
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || '',
 });

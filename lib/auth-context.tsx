@@ -107,48 +107,74 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message, profile: null };
+    try {
+      const cleanEmail = email.trim();
+      const authPromise = supabase.auth.signInWithPassword({ email: cleanEmail, password });
+      const timeoutPromise = new Promise<{ data: any; error: any }>((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error('Connection timed out. Please check your internet connection.')
+            ),
+          8000
+        )
+      );
 
-    if (data?.user) {
-      setSession(data.session);
-      setUser(data.user);
+      const { data, error } = await Promise.race([authPromise, timeoutPromise]);
+      if (error) return { error: error.message || 'Invalid email or password', profile: null };
 
-      let fetchedProfile: Profile | null = null;
-      try {
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .maybeSingle();
-        fetchedProfile = profileData as Profile | null;
-      } catch (err) {
-        console.error('Error fetching profile during signIn:', err);
+      if (data?.user) {
+        setSession(data.session);
+        setUser(data.user);
+
+        let fetchedProfile: Profile | null = null;
+        try {
+          const profilePromise = supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .maybeSingle();
+          const profileTimeout = new Promise<{ data: any; error: any }>((resolve) =>
+            setTimeout(() => resolve({ data: null, error: null }), 3000)
+          );
+          const { data: profileData } = await Promise.race([profilePromise, profileTimeout]);
+          fetchedProfile = profileData as Profile | null;
+        } catch (err) {
+          console.warn('[Auth] Profile fetch warning:', err);
+        }
+
+        if (!fetchedProfile) {
+          const lowerEmail = cleanEmail.toLowerCase();
+          const metaRole =
+            (data.user.user_metadata?.role as UserRole) ||
+            (lowerEmail.includes('admin')
+              ? 'ADMIN'
+              : lowerEmail.includes('staff')
+              ? 'STAFF'
+              : 'STUDENT');
+          fetchedProfile = {
+            id: data.user.id,
+            email: data.user.email || cleanEmail,
+            full_name: data.user.user_metadata?.full_name || cleanEmail.split('@')[0],
+            role: metaRole,
+            avatar_url: null,
+            phone: null,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        }
+
+        setProfile(fetchedProfile);
+        setLoading(false);
+        return { error: null, profile: fetchedProfile };
       }
 
-      if (!fetchedProfile) {
-        const lowerEmail = email.toLowerCase();
-        const metaRole = (data.user.user_metadata?.role as UserRole) ||
-          (lowerEmail.includes('admin') ? 'ADMIN' : lowerEmail.includes('staff') ? 'STAFF' : 'STUDENT');
-        fetchedProfile = {
-          id: data.user.id,
-          email: data.user.email || email,
-          full_name: data.user.user_metadata?.full_name || email.split('@')[0],
-          role: metaRole,
-          avatar_url: null,
-          phone: null,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-      }
-
-      setProfile(fetchedProfile);
-      setLoading(false);
-      return { error: null, profile: fetchedProfile };
+      return { error: 'Authentication failed. Please try again.', profile: null };
+    } catch (err: any) {
+      console.error('[Auth] signIn exception:', err);
+      return { error: err?.message || 'Login failed. Please try again.', profile: null };
     }
-
-    return { error: null, profile: null };
   };
 
   const signOut = async () => {

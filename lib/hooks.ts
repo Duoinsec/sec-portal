@@ -11,28 +11,37 @@ import type {
 } from '@/lib/types';
 
 export function useStudentProfile() {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const [data, setData] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!profile) return;
+    if (authLoading) return;
+    if (!profile) {
+      setLoading(false);
+      return;
+    }
     let active = true;
     (async () => {
       setLoading(true);
-      const { data: student, error: err } = await supabase
-        .from('students')
-        .select('*, department:departments(*)')
-        .eq('profile_id', profile.id)
-        .maybeSingle();
-      if (!active) return;
-      if (err) setError(err.message);
-      else setData(student as Student | null);
-      setLoading(false);
+      try {
+        const { data: student, error: err } = await supabase
+          .from('students')
+          .select('*, department:departments(*)')
+          .eq('profile_id', profile.id)
+          .maybeSingle();
+        if (!active) return;
+        if (err) setError(err.message);
+        else setData(student as Student | null);
+      } catch (e: any) {
+        if (active) setError(e?.message || 'Error fetching student');
+      } finally {
+        if (active) setLoading(false);
+      }
     })();
     return () => { active = false; };
-  }, [profile]);
+  }, [profile, authLoading]);
 
   return { data, loading, error };
 }

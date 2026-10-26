@@ -10,17 +10,13 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
   const router = useRouter();
 
   useEffect(() => {
-    const safetyTimer = setTimeout(() => {
-      if (!profile) {
-        router.replace('/login/');
-      }
-    }, 2000);
-
     if (loading) return;
+
     if (!profile) {
       router.replace('/login/');
       return;
     }
+
     if (allowedRoles && !allowedRoles.includes(profile.role)) {
       const dashboardMap: Record<string, string> = {
         ADMIN: '/admin/',
@@ -29,9 +25,7 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
       };
       router.replace(dashboardMap[profile.role] || '/login/');
     }
-
-    return () => clearTimeout(safetyTimer);
-  }, [profile, loading, router, allowedRoles]);
+  }, [profile, loading, router, allowedRoles?.join(',')]);
 
   if (loading) {
     return (

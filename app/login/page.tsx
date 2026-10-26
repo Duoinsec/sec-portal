@@ -32,9 +32,15 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (profile) {
-      const route =
+      const target =
         profile.role === 'ADMIN' ? '/admin/' : profile.role === 'STAFF' ? '/staff/' : '/student/';
-      router.replace(route);
+      router.replace(target);
+      const timer = setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname !== target) {
+          window.location.href = target;
+        }
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [profile, router]);
 
@@ -42,21 +48,33 @@ export default function LoginPage() {
     e.preventDefault();
     if (!email || !password) return;
     setLoading(true);
-    const { error, profile: loggedProfile } = await signIn(email, password);
-    setLoading(false);
-    if (error) {
-      toast.error(error);
-      return;
+    try {
+      const { error, profile: loggedProfile } = await signIn(email, password);
+      if (error) {
+        toast.error(error);
+        return;
+      }
+      toast.success('Welcome back!');
+      const activeUser = loggedProfile || profile;
+      const targetRoute =
+        activeUser?.role === 'ADMIN'
+          ? '/admin/'
+          : activeUser?.role === 'STAFF'
+          ? '/staff/'
+          : '/student/';
+
+      router.replace(targetRoute);
+      setTimeout(() => {
+        if (typeof window !== 'undefined' && window.location.pathname !== targetRoute) {
+          window.location.href = targetRoute;
+        }
+      }, 300);
+    } catch (err: any) {
+      console.error('[Login] Error in handleSubmit:', err);
+      toast.error(err?.message || 'Failed to sign in. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    toast.success('Welcome back!');
-    const activeUser = loggedProfile || profile;
-    const targetRoute =
-      activeUser?.role === 'ADMIN'
-        ? '/admin/'
-        : activeUser?.role === 'STAFF'
-        ? '/staff/'
-        : '/student/';
-    router.replace(targetRoute);
   };
 
   const handleReset = async (e: React.FormEvent) => {
