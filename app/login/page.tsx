@@ -33,7 +33,7 @@ export default function LoginPage() {
   useEffect(() => {
     if (profile) {
       const route =
-        profile.role === 'ADMIN' ? '/admin' : profile.role === 'STAFF' ? '/staff' : '/student';
+        profile.role === 'ADMIN' ? '/admin/' : profile.role === 'STAFF' ? '/staff/' : '/student/';
       router.replace(route);
     }
   }, [profile, router]);
@@ -52,10 +52,10 @@ export default function LoginPage() {
     const activeUser = loggedProfile || profile;
     const targetRoute =
       activeUser?.role === 'ADMIN'
-        ? '/admin'
+        ? '/admin/'
         : activeUser?.role === 'STAFF'
-        ? '/staff'
-        : '/student';
+        ? '/staff/'
+        : '/student/';
     router.replace(targetRoute);
   };
 

@@ -35,42 +35,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let mounted = true;
 
     const initAuth = async () => {
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
-      if (!mounted) return;
+      try {
+        // Enforce 2.5s maximum timeout so loading never hangs when offline or on mobile
+        const sessionPromise = supabase.auth.getSession().catch((err) => {
+          console.warn('[Auth] getSession warning:', err);
+          return { data: { session: null }, error: err };
+        });
 
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
+        const timeoutPromise = new Promise<{ data: { session: null }; error: null }>((resolve) =>
+          setTimeout(() => resolve({ data: { session: null }, error: null }), 2500)
+        );
 
-      if (existingSession?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', existingSession.user.id)
-          .maybeSingle();
-        if (mounted) setProfile(data as Profile | null);
+        const result = await Promise.race([sessionPromise, timeoutPromise]);
+        const existingSession = result?.data?.session ?? null;
+
+        if (!mounted) return;
+
+        setSession(existingSession);
+        setUser(existingSession?.user ?? null);
+
+        if (existingSession?.user) {
+          try {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', existingSession.user.id)
+              .maybeSingle();
+            if (mounted) setProfile(data as Profile | null);
+          } catch (profileErr) {
+            console.warn('[Auth] Error fetching profile:', profileErr);
+          }
+        }
+      } catch (err) {
+        console.warn('[Auth] Init auth exception:', err);
+      } finally {
+        if (mounted) setLoading(false);
       }
-      if (mounted) setLoading(false);
     };
 
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       (async () => {
-        if (!mounted) return;
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
+        try {
+          if (!mounted) return;
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
 
-        if (newSession?.user) {
-          const { data } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', newSession.user.id)
-            .maybeSingle();
-          if (mounted) setProfile(data as Profile | null);
-        } else {
-          if (mounted) setProfile(null);
+          if (newSession?.user) {
+            const { data } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', newSession.user.id)
+              .maybeSingle();
+            if (mounted) setProfile(data as Profile | null);
+          } else {
+            if (mounted) setProfile(null);
+          }
+        } catch (stateErr) {
+          console.warn('[Auth] onAuthStateChange warning:', stateErr);
+        } finally {
+          if (mounted) setLoading(false);
         }
-        if (mounted) setLoading(false);
       })();
     });
 
