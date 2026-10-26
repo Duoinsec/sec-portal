@@ -72,6 +72,46 @@ export interface PixabayImage {
   explanation?: string | null;
 }
 
+export interface TopicSection {
+  topic_title: string;
+  search_query?: string;
+  images?: PixabayImage[];
+  content: string;
+}
+
+function cleanSearchQuery(q: string): string {
+  return q
+    .replace(/[0-9]+\.|\d+\)/g, '')
+    .replace(/[^\w\s]/gi, ' ')
+    .replace(/\b(explain|tell|me|about|what|is|how|to|can|you|describe|show|architecture|diagram|of|in|and|the|a|an|for|with|use|technology|important|example)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 100);
+}
+
+function extractSectionsFromMarkdown(text: string): { title: string; content: string }[] {
+  const headerRegex = /(?:^|\n)(?:###?\s*)?(\d+[\.\)]\s+[^\n]+)/g;
+  const matches: { title: string; index: number }[] = [];
+  let match;
+  while ((match = headerRegex.exec(text)) !== null) {
+    matches.push({ title: match[1].trim(), index: match.index });
+  }
+  if (matches.length >= 2) {
+    const sections: { title: string; content: string }[] = [];
+    for (let i = 0; i < matches.length; i++) {
+      const current = matches[i];
+      const next = matches[i + 1];
+      const rawChunk = text.slice(current.index, next ? next.index : undefined);
+      const lines = rawChunk.trim().split('\n');
+      const title = lines[0].replace(/^###?\s*/, '').trim();
+      const content = lines.slice(1).join('\n').trim();
+      sections.push({ title, content });
+    }
+    return sections;
+  }
+  return [];
+}
+
 async function fetchPixabayImages(query: string, limit = 4): Promise<{ images: PixabayImage[]; error?: string }> {
   const pixabayKey = process.env.PIXABAY_API_KEY;
   if (!pixabayKey) {
@@ -82,9 +122,7 @@ async function fetchPixabayImages(query: string, limit = 4): Promise<{ images: P
   }
 
   try {
-    const cleanQuery = query
-      .replace(/explain|tell me about|what is|how to|can you|describe|show me|architecture of|diagram of/gi, '')
-      .trim() || query;
+    const cleanQuery = cleanSearchQuery(query) || query;
 
     const url = new URL('https://pixabay.com/api/');
     url.searchParams.set('key', pixabayKey);
@@ -157,7 +195,7 @@ async function explainImagesWithGemini(
 const SYSTEM_PROMPT = `You are SEC AI Assistant — the official AI chatbot for Sengunthar Engineering College (SEC), Tiruchengode, Tamil Nadu.
 Project: "AI-Powered College Assistant Chatbot using NLP". Affiliated to Anna University, NAAC 'A' accredited.
 
-You are equipped with Query Understanding, Intent Detection, and Visual Requirement Analysis.
+You are equipped with Query Understanding, Intent Detection, Visual Requirement Analysis, and Topic-Wise Image Selection.
 
 KNOWLEDGE SOURCES:
 You draw answers from the College Knowledge Base, which includes:
@@ -167,6 +205,18 @@ You draw answers from the College Knowledge Base, which includes:
 - Examination, Attendance (75% mandatory), and Fee Regulations
 - Training & Placement Cell Drive Guidelines (Zoho, TCS, Infosys, Wipro)
 - Campus Facility Guide (Hostels, Digital Library, Labs, Auditorium)
+
+TOPIC-WISE STRUCTURE & SUITABLE IMAGE SELECTION:
+When explaining multi-part topics, everyday AI applications, technical concepts, engineering domains, architectures, or practical examples:
+Break down your answer into structured "topic_sections" (typically 2 to 4 distinct topics).
+For each topic section:
+- "topic_title": Numbered topic header with an emoji (e.g. "1. 📱 AI in Face Recognition & Smartphones", "2. ▶️ AI on YouTube, Instagram and Netflix", "3. 🗺️ AI in Google Maps & Navigation", "4. 🏥 AI in Healthcare & Diagnostics").
+- "search_query": 2 to 4 clean English keywords describing concrete real-world objects, devices, apps, or technologies suitable for finding stock photos (e.g. "smartphone facial recognition", "youtube netflix smartphone", "google maps navigation traffic", "doctor hospital medical scanner").
+- "content": Detailed pedagogical explanation for that specific topic:
+  - "How do we use it?" with clear bullet points
+  - "Example:" Relatable real-world scenario
+  - "AI technology:" Core algorithms, recommendation systems, or engineering models
+  - "Important:" Key practical takeaway
 
 VISUAL TYPES YOU SUPPORT:
 - educational_diagram
@@ -179,31 +229,35 @@ VISUAL TYPES YOU SUPPORT:
 - chart
 
 INTELLIGENT VISUAL DECISION RULE:
-Do NOT generate a visual for every question.
-Set "visual_required": true ONLY when the answer benefits from a visual explanation:
-- Questions asking for architecture, system design, layout, workflow, flowchart, pipeline, steps, concepts, or visual representation.
-- When student asks "Explain the architecture of our College Assistant Chatbot", "Show the architecture", "Campus layout", "Placement process flowchart", "AI & DS model pipeline", etc.
-For normal conversational, factual, or simple text questions (e.g. "What is the passing mark?", "Who is the HOD?"), set "visual_required": false.
-
-PEDAGOGICAL TEACHING STYLE (ALWAYS USE PRACTICAL SAMPLES & EXAMPLES):
-- For EVERY concept or technical topic, ALWAYS include an intuitive, real-world **Practical Sample / Analogy** (e.g. comparing Neural Networks to a medical diagnosis workflow or facial recognition at an airport; comparing B-Trees to a library indexing system; comparing Transformers to electrical grid distribution).
-- When explaining algorithms, coding, or mathematical concepts, provide a concise **Working Code / Calculation Sample** (e.g., Python snippet, mathematical step with sample numbers).
-- Use clear visual structuring:
-  1. 📌 **Concept Definition** (Clear & concise)
-  2. 💡 **Real-World Sample / Relatable Analogy** (Real-life practical scenario)
-  3. ⚙️ **Architecture / Step-by-Step Breakdown**
-  4. 💻 **Sample Implementation / Code Example** (if relevant)
-  5. 🎓 **Exam / Viva Key Takeaway**
+Set "visual_required": true ONLY when the answer requires an overall architecture flowchart or system diagram (e.g. "Show college assistant chatbot architecture", "Placement workflow flowchart").
+For topics with real-world examples and concepts, provide rich "topic_sections".
 
 MANDATORY OUTPUT FORMAT:
 You MUST ALWAYS respond with a VALID JSON OBJECT matching this exact structure:
 
 {
-  "answer": "Clear, comprehensive, and well-structured answer for the student using bullet points, headers, bold text, and ALWAYS featuring a clear Real-World Sample / Example section.",
-  "visual_required": true or false,
-  "visual_type": "system_architecture" | "educational_diagram" | "workflow" | "flowchart" | "process_diagram" | "infographic" | "concept_illustration" | "chart" | null,
-  "visual_prompt": "Detailed descriptive visual synthesis prompt describing what the diagram or visual illustrates" | null,
-  "sources": ["College Knowledge Base", "Curriculum Regulation 2021", etc.]
+  "answer": "Clear introductory summary answering the student's question...",
+  "topic_sections": [
+    {
+      "topic_title": "1. 📱 AI in Smartphones & Facial Recognition",
+      "search_query": "smartphone facial recognition biometric",
+      "content": "How do we use it?\n- Unlocks smartphone screens using facial geometry.\n- Categorizes photos automatically in photo galleries.\n\nExample: Apple FaceID or Android Smart Lock.\nAI technology: Computer vision, Convolutional Neural Networks (CNNs).\nImportant: Biometric data is stored securely in hardware enclaves."
+    },
+    {
+      "topic_title": "2. ▶️ AI on YouTube, Instagram and Netflix",
+      "search_query": "youtube instagram netflix smartphone",
+      "content": "How do we use it?\n- YouTube recommends videos based on viewing history.\n- Instagram suggests Reels and explores posts tailored to your tastes.\n- Netflix recommends movies and shows matching user ratings.\n\nExample: Watching technology tutorials leads to more programming recommendations.\nAI technology: Collaborative filtering, Deep Recommender Systems, user-behavior analysis.\nImportant: Recommendations adapt continuously as watch history evolves."
+    },
+    {
+      "topic_title": "3. 🗺️ AI in Google Maps",
+      "search_query": "google maps navigation gps traffic",
+      "content": "How do we use it?\n- Real-time traffic analysis and optimal route recalculation.\n- Live transit arrival predictions.\n\nExample: Automatically rerouting around highway bottlenecks.\nAI technology: Graph neural networks, predictive traffic models, GPS telemetry.\nImportant: Estimates are dynamic based on live road sensor data."
+    }
+  ],
+  "visual_required": false,
+  "visual_type": null,
+  "visual_prompt": null,
+  "sources": ["College Knowledge Base", "Anna University Curriculum"]
 }
 
 For system architecture questions about the College Assistant Chatbot, provide a thorough explanation of all 10 layers (Student, Web/Mobile UI, Auth, Backend API, Query Processing, NLP/Intent, Knowledge Base, Supabase DB/Storage, Groq AI Model, Response Generation, Visual Decision).`;
@@ -317,20 +371,84 @@ export async function POST(req: NextRequest) {
       : ['College Knowledge Base'];
 
 
-    // 5. Real Pixabay Images Search + Gemini Explanation
+    // 5. Topic-Wise Real Images Search (Pixabay)
+    let finalTopicSections: TopicSection[] = [];
     let realImages: PixabayImage[] = [];
     let pixabayError: string | null = null;
-    try {
-      const pixabayResult = await fetchPixabayImages(validation.sanitized, 4);
-      realImages = pixabayResult.images;
-      pixabayError = pixabayResult.error || null;
 
-      if (realImages.length > 0 && geminiKey) {
-        await explainImagesWithGemini(realImages, validation.sanitized, geminiKey);
+    // Check if AI provided topic_sections
+    let rawSections: any[] = Array.isArray(parsedResponse.topic_sections) ? parsedResponse.topic_sections : [];
+
+    // Fallback: If not provided as array, try parsing markdown sections from the answer
+    if (rawSections.length === 0) {
+      const parsedMarkdownSections = extractSectionsFromMarkdown(answer);
+      if (parsedMarkdownSections.length > 0) {
+        rawSections = parsedMarkdownSections.map((s) => ({
+          topic_title: s.title,
+          search_query: cleanSearchQuery(s.title),
+          content: s.content,
+        }));
       }
-    } catch (pixErr: any) {
-      console.warn('[Pixabay Pipeline Warning]', pixErr?.message || pixErr);
-      pixabayError = pixErr?.message || 'Error loading Pixabay images';
+    }
+
+    if (rawSections.length > 0) {
+      // Concurrently fetch 3 images for each topic section (up to 4 sections)
+      try {
+        finalTopicSections = await Promise.all(
+          rawSections.slice(0, 4).map(async (sec: any) => {
+            const topicTitle = String(sec.topic_title || '').trim();
+            const rawQuery = sec.search_query || topicTitle;
+            const cleanQ = cleanSearchQuery(rawQuery) || cleanSearchQuery(topicTitle) || validation.sanitized;
+            const { images, error } = await fetchPixabayImages(cleanQ, 3);
+            if (error && !pixabayError) pixabayError = error;
+            return {
+              topic_title: topicTitle,
+              search_query: cleanQ,
+              content: String(sec.content || ''),
+              images: Array.isArray(images) ? images : [],
+            };
+          })
+        );
+
+        // Collect all images for backward compatibility
+        finalTopicSections.forEach((sec) => {
+          if (sec.images) {
+            realImages.push(...sec.images);
+          }
+        });
+      } catch (topicErr: any) {
+        console.warn('[Topic Sections Fetch Warning]', topicErr?.message || topicErr);
+      }
+    }
+
+    // Fallback if no topic sections or images fetched
+    if (finalTopicSections.length === 0 || realImages.length === 0) {
+      try {
+        const pixabayResult = await fetchPixabayImages(validation.sanitized, 3);
+        if (pixabayResult.images.length > 0) {
+          realImages = pixabayResult.images;
+          if (finalTopicSections.length === 0) {
+            finalTopicSections = [
+              {
+                topic_title: validation.sanitized,
+                search_query: validation.sanitized,
+                content: answer,
+                images: realImages,
+              },
+            ];
+          }
+        }
+        if (pixabayResult.error && !pixabayError) {
+          pixabayError = pixabayResult.error;
+        }
+
+        if (realImages.length > 0 && geminiKey) {
+          await explainImagesWithGemini(realImages, validation.sanitized, geminiKey);
+        }
+      } catch (pixErr: any) {
+        console.warn('[Pixabay Pipeline Warning]', pixErr?.message || pixErr);
+        pixabayError = pixErr?.message || 'Error loading Pixabay images';
+      }
     }
 
     // 6. Visual Pipeline (AI Generated Illustration)
@@ -364,6 +482,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       answer,
       reply: answer, // backward compatibility
+      topic_sections: finalTopicSections,
       visual_required: visualRequired,
       visual_type: visualType,
       visual_prompt: visualPrompt,

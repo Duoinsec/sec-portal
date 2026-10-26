@@ -14,6 +14,13 @@ export interface PixabayImage {
   explanation?: string | null;
 }
 
+export interface TopicSection {
+  topic_title: string;
+  search_query?: string;
+  images?: PixabayImage[];
+  content: string;
+}
+
 export interface VisualMetadata {
   visual_required?: boolean;
   visual_type?: string | null;
@@ -21,6 +28,7 @@ export interface VisualMetadata {
   visual_url?: string | null;
   visual_label?: string | null;
   real_images?: PixabayImage[];
+  topic_sections?: TopicSection[];
   pixabay_error?: string | null;
   sources?: string[];
 }
@@ -29,6 +37,55 @@ interface ChatMessageContentProps {
   content: string;
   isUser: boolean;
   visualData?: VisualMetadata;
+}
+
+function resolveTopicSections(
+  content: string,
+  visualData?: VisualMetadata
+): { intro: string; sections: TopicSection[] } {
+  // 1. If visualData already provides structured topic_sections with images
+  if (visualData?.topic_sections && visualData.topic_sections.length > 0) {
+    return {
+      intro: '',
+      sections: visualData.topic_sections,
+    };
+  }
+
+  // 2. Fallback: Parse numbered headers like "1. 📱 ...", "2. ▶️ ...", "### 1. ..."
+  const headerRegex = /(?:^|\n)(?:###?\s*)?(\d+[\.\)]\s+[^\n]+)/g;
+  const matches: { title: string; index: number }[] = [];
+  let m;
+  while ((m = headerRegex.exec(content)) !== null) {
+    matches.push({ title: m[1].trim(), index: m.index });
+  }
+
+  if (matches.length >= 2) {
+    const intro = content.substring(0, matches[0].index).trim();
+    const allImages = visualData?.real_images || [];
+    const imagesPerSection = Math.max(1, Math.floor(allImages.length / matches.length)) || 3;
+
+    const sections: TopicSection[] = [];
+    for (let i = 0; i < matches.length; i++) {
+      const cur = matches[i];
+      const nxt = matches[i + 1];
+      const rawChunk = content.slice(cur.index, nxt ? nxt.index : undefined);
+      const lines = rawChunk.trim().split('\n');
+      const title = lines[0].replace(/^###?\s*/, '').trim();
+      const body = lines.slice(1).join('\n').trim();
+
+      const secImages = allImages.slice(i * imagesPerSection, (i + 1) * imagesPerSection);
+
+      sections.push({
+        topic_title: title,
+        content: body,
+        images: secImages.length > 0 ? secImages : undefined,
+      });
+    }
+
+    return { intro, sections };
+  }
+
+  return { intro: content, sections: [] };
 }
 
 export function ChatMessageContent({ content, isUser, visualData }: ChatMessageContentProps) {
@@ -99,7 +156,7 @@ export function ChatMessageContent({ content, isUser, visualData }: ChatMessageC
     return parts;
   };
 
-  // Render formatted lines
+  // Render formatted lines with special section labels
   const renderFormattedText = (text: string) => {
     const lines = text.split('\n');
 
@@ -108,7 +165,7 @@ export function ChatMessageContent({ content, isUser, visualData }: ChatMessageC
         {lines.map((line, lIdx) => {
           const trimmed = line.trim();
 
-          // Heading 3 / 2 / 1
+          // Sub-topic Headings
           if (trimmed.startsWith('### ')) {
             return (
               <h3 key={lIdx} className="font-bold text-[#0f172a] text-sm pt-2 pb-0.5 border-b border-slate-100 flex items-center gap-1.5">
@@ -156,6 +213,45 @@ export function ChatMessageContent({ content, isUser, visualData }: ChatMessageC
             );
           }
 
+          // Styled sub-labels
+          if (/^How do we use it\??/i.test(trimmed) || /^Key Concept:?/i.test(trimmed)) {
+            return (
+              <p key={lIdx} className="font-bold text-[#0f172a] text-sm pt-1.5 pb-0.5">
+                {renderInlineMarkdown(trimmed)}
+              </p>
+            );
+          }
+
+          if (/^Example:\s*/i.test(trimmed)) {
+            const expBody = trimmed.replace(/^Example:\s*/i, '');
+            return (
+              <p key={lIdx} className="my-1 text-slate-800">
+                <strong className="font-semibold text-slate-900">Example: </strong>
+                {renderInlineMarkdown(expBody)}
+              </p>
+            );
+          }
+
+          if (/^(?:AI\s+)?technology:\s*/i.test(trimmed)) {
+            const techBody = trimmed.replace(/^(?:AI\s+)?technology:\s*/i, '');
+            return (
+              <p key={lIdx} className="my-1 text-slate-800">
+                <strong className="font-semibold text-slate-900">AI technology: </strong>
+                {renderInlineMarkdown(techBody)}
+              </p>
+            );
+          }
+
+          if (/^Important:\s*/i.test(trimmed)) {
+            const impBody = trimmed.replace(/^Important:\s*/i, '');
+            return (
+              <p key={lIdx} className="my-1 text-slate-800">
+                <strong className="font-semibold text-slate-900">Important: </strong>
+                {renderInlineMarkdown(impBody)}
+              </p>
+            );
+          }
+
           // Horizontal rule
           if (trimmed === '---' || trimmed === '***') {
             return <hr key={lIdx} className="my-2 border-slate-200" />;
@@ -183,43 +279,111 @@ export function ChatMessageContent({ content, isUser, visualData }: ChatMessageC
     ? visualData.sources
     : ['College Knowledge Base'];
 
-  // Clean text by stripping inline markdown image syntax if it will be displayed in the card
   const cleanedContent = content.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '').trim();
 
-  const hasRealImages = Boolean(visualData?.real_images && visualData.real_images.length > 0);
+  // Resolve Topic-Wise Sections
+  const { intro: topicIntro, sections: topicSections } = resolveTopicSections(cleanedContent, visualData);
+  const hasTopicSections = topicSections.length > 0;
+
+  const allImagesCount = (visualData?.real_images?.length || 0) + (topicSections.reduce((acc, s) => acc + (s.images?.length || 0), 0));
+  const hasRealImages = allImagesCount > 0;
   const hasIllustration = Boolean(effectiveImageUrl || visualData?.visual_required);
   const mediaSectionId = `media-${content.slice(0, 10).replace(/\W/g, '') || 'block'}`;
 
   return (
     <>
-      <div className="chat-message-body space-y-2">
-        {/* Top Media Quick Jump Badge if images/diagrams are attached */}
+      <div className="chat-message-body space-y-3">
+        {/* Top Media Quick Jump Badge */}
         {(hasRealImages || hasIllustration) && (
-          <div className="mb-2.5 flex items-center justify-between gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-950 shadow-xs">
+          <div className="mb-2 flex items-center justify-between gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-950 shadow-xs">
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               <span className="font-semibold truncate">
-                {hasRealImages ? `📸 ${visualData?.real_images?.length} Sample Photos Attached` : '📊 Diagram Visual Attached'}
+                {hasRealImages ? `📸 ${allImagesCount} Topic-Wise Photos Attached` : '📊 Diagram Visual Attached'}
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                document.getElementById(mediaSectionId)?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-white hover:bg-emerald-100/60 text-emerald-800 font-medium rounded-lg border border-emerald-300 shadow-xs text-[11px] shrink-0 transition-colors"
-            >
-              <span>Scroll to Images</span>
-              <ChevronDown className="h-3 w-3" />
-            </button>
+            <span className="text-[10.5px] text-emerald-800 font-medium px-2 py-0.5 bg-white rounded-md border border-emerald-200">
+              Topic-Wise AI Images
+            </span>
           </div>
         )}
 
-        {/* 1. Main Text Answer */}
-        {renderFormattedText(cleanedContent)}
+        {/* TOPIC-WISE RENDERING (EXACTLY AS SCREENSHOT) */}
+        {hasTopicSections ? (
+          <div className="space-y-4">
+            {topicIntro && renderFormattedText(topicIntro)}
 
-        {/* 2. REAL IMAGES FROM PIXABAY */}
-        {hasRealImages && (
+            {topicSections.map((section, sIdx) => (
+              <div key={sIdx} className="topic-block space-y-2">
+                {/* 1. Topic Title Heading */}
+                <h3 className="font-extrabold text-[#0f172a] text-sm sm:text-base pt-1 pb-0.5 tracking-tight flex items-center gap-2">
+                  {renderInlineMarkdown(section.topic_title)}
+                </h3>
+
+                {/* 2. Topic Image Gallery (3 Photos Side by Side) */}
+                {section.images && section.images.length > 0 && (
+                  <div className="my-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {section.images.slice(0, 3).map((img, imgIdx) => (
+                        <div
+                          key={img.id || imgIdx}
+                          onClick={() =>
+                            setModalImage({
+                              src: img.large_image_url || img.web_format_url,
+                              alt: img.tags || section.topic_title,
+                              creator: img.user,
+                              pageUrl: img.page_url,
+                              isReal: true,
+                            })
+                          }
+                          className="group relative h-40 sm:h-44 rounded-2xl overflow-hidden bg-slate-950 border border-slate-200/90 shadow-xs hover:shadow-md transition-all duration-200 cursor-pointer flex items-center justify-center"
+                        >
+                          <img
+                            src={img.web_format_url}
+                            alt={img.tags || section.topic_title}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              if (target.src !== img.preview_url) {
+                                target.src = img.preview_url;
+                              }
+                            }}
+                          />
+                          {/* Hover overlay with creator and zoom icon */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-between p-2.5">
+                            <span className="text-[11px] text-white font-medium truncate drop-shadow-sm">
+                              Photo by {img.user || 'Pixabay'}
+                            </span>
+                            <Maximize2 className="h-3.5 w-3.5 text-white shrink-0 ml-1" />
+                          </div>
+
+                          {/* Rightmost image count badge like the user's screenshot */}
+                          {imgIdx === Math.min(2, (section.images?.length || 1) - 1) && (
+                            <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-lg bg-black/60 backdrop-blur-md text-white text-[10.5px] font-semibold flex items-center gap-1 border border-white/20 shadow-xs pointer-events-none group-hover:opacity-0 transition-opacity">
+                              <ImageIcon className="h-3 w-3 text-white/90" />
+                              <span>{section.images?.length}</span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Topic Content Breakdown */}
+                {renderFormattedText(section.content)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          /* Single Topic / Regular Answer */
+          renderFormattedText(cleanedContent)
+        )}
+
+        {/* 2. Single Topic / Fallback Real Images Grid */}
+        {!hasTopicSections && hasRealImages && visualData?.real_images && visualData.real_images.length > 0 && (
           <div id={mediaSectionId} className="my-3 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm transition-all hover:shadow-md">
             {/* Header with Verified Media Badge */}
             <div className="flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-emerald-950 via-slate-900 to-slate-900 border-b border-emerald-900/50 text-white">
@@ -239,7 +403,7 @@ export function ChatMessageContent({ content, isUser, visualData }: ChatMessageC
 
             {/* Images Grid */}
             <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50/70">
-              {visualData?.real_images?.map((img) => (
+              {visualData.real_images.map((img) => (
                 <div
                   key={img.id}
                   className="group flex flex-col bg-white rounded-xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-200"
