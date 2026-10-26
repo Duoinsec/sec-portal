@@ -224,97 +224,56 @@ export default function StudentChat() {
         },
       ]);
     } catch (err: any) {
-      console.warn('Backend API route failed, attempting direct Gemini API connection:', err);
+      console.warn('Backend API route failed, attempting direct OpenAI ChatGPT connection:', err);
       try {
-        const geminiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || 'AIzaSyDuKXduKLosFrJS_yEzDGqKxFm1kF9kFAA';
-        const contents = updatedMessages.map((m) => ({
-          role: m.role === 'assistant' ? 'model' : 'user',
-          parts: [{ text: m.content }],
-        }));
-
-        const sysPrompt = `You are SEC AI Assistant — the official AI chatbot for Sengunthar Engineering College (SEC), Tiruchengode, Tamil Nadu. Affiliated to Anna University, NAAC 'A' accredited. Provide helpful, structured, and friendly answers with numbered topic sections (e.g. "1. 📱 ...", "2. ▶️ ...", "3. 🗺️ ...") including real-world practical examples, how it's used, underlying AI technology, and key takeaways.`;
-
-        const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${geminiKey}`,
+        const openaiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY || '';
+        const formattedMessages = [
           {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              system_instruction: { parts: [{ text: sysPrompt }] },
-              contents,
-              generationConfig: { temperature: 0.5 },
-            }),
-          }
-        );
+            role: 'system',
+            content: `You are SEC AI Assistant — the official AI chatbot for Sengunthar Engineering College (SEC), Tiruchengode, Tamil Nadu. Affiliated to Anna University, NAAC 'A' accredited. Provide helpful, structured, and friendly answers with numbered topic sections (e.g. "1. 📱 ...", "2. ▶️ ...", "3. 🗺️ ...") including real-world practical examples, how it's used, underlying AI technology, and key takeaways.`,
+          },
+          ...updatedMessages.map((m) => ({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: m.content,
+          })),
+        ];
 
-        if (geminiRes.ok) {
-          const gData = await geminiRes.json();
-          const geminiAnswer = gData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          if (geminiAnswer) {
-            let clientSections: any[] = [];
-            let clientImages: any[] = [];
-            const pixKey = process.env.NEXT_PUBLIC_PIXABAY_API_KEY || '58232855-1ad655d824cf0901ac240ba3c';
+        const chatgptRes = await fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${openaiKey}`,
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o-mini',
+            messages: formattedMessages,
+            temperature: 0.5,
+            max_tokens: 1500,
+          }),
+        });
 
-            if (pixKey) {
-              const headerRegex = /(?:^|\n)(?:###?\s*)?(\d+[\.\)]\s+[^\n]+)/g;
-              const matches: { title: string; index: number }[] = [];
-              let m;
-              while ((m = headerRegex.exec(geminiAnswer)) !== null) {
-                matches.push({ title: m[1].trim(), index: m.index });
-              }
-
-              if (matches.length >= 2) {
-                for (let i = 0; i < Math.min(matches.length, 3); i++) {
-                  const cur = matches[i];
-                  const nxt = matches[i + 1];
-                  const rawChunk = geminiAnswer.slice(cur.index, nxt ? nxt.index : undefined);
-                  const lines = rawChunk.trim().split('\n');
-                  const title = lines[0].replace(/^###?\s*/, '').trim();
-                  const body = lines.slice(1).join('\n').trim();
-                  const cleanQ = title.replace(/[0-9]+\.|\d+\)/g, '').replace(/[^\w\s]/gi, ' ').replace(/\b(explain|what|is|in|and|the|a|an|to)\b/gi, '').trim();
-                  try {
-                    const pRes = await fetch(`https://pixabay.com/api/?key=${pixKey}&q=${encodeURIComponent(cleanQ.slice(0, 80))}&image_type=all&per_page=3&safesearch=true&orientation=horizontal`);
-                    if (pRes.ok) {
-                      const pData = await pRes.json();
-                      const imgs = (pData.hits || []).map((h: any) => ({
-                        id: h.id,
-                        tags: h.tags || '',
-                        preview_url: h.previewURL || h.webformatURL,
-                        web_format_url: h.webformatURL,
-                        large_image_url: h.largeImageURL || h.webformatURL,
-                        page_url: h.pageURL,
-                        user: h.user || 'Pixabay Contributor',
-                      }));
-                      clientSections.push({ topic_title: title, content: body, images: imgs });
-                      clientImages.push(...imgs);
-                    }
-                  } catch {
-                    clientSections.push({ topic_title: title, content: body });
-                  }
-                }
-              }
-            }
-
+        if (chatgptRes.ok) {
+          const gData = await chatgptRes.json();
+          const chatgptAnswer = gData.choices?.[0]?.message?.content || '';
+          if (chatgptAnswer) {
             setMessages((prev) => [
               ...prev,
               {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: geminiAnswer,
+                content: chatgptAnswer,
                 time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 visualData: {
                   visual_required: false,
-                  topic_sections: clientSections.length > 0 ? clientSections : undefined,
-                  real_images: clientImages,
-                  sources: ['SEC Knowledge Base (Google Gemini)', ...(clientImages.length > 0 ? ['Pixabay Media'] : [])],
+                  sources: ['SEC Knowledge Base (OpenAI ChatGPT)'],
                 },
               },
             ]);
             return;
           }
         }
-      } catch (geminiFallbackErr) {
-        console.error('Gemini direct fallback error:', geminiFallbackErr);
+      } catch (openaiFallbackErr) {
+        console.error('OpenAI direct fallback error:', openaiFallbackErr);
       }
 
       setHasError(true);

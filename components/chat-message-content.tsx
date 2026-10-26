@@ -475,19 +475,7 @@ export function ChatMessageContent({ content, isUser, visualData }: ChatMessageC
           </div>
         )}
 
-        {/* Pixabay Configuration Warning Banner if error present and no images */}
-        {visualData?.pixabay_error && (!visualData?.real_images || visualData.real_images.length === 0) && (
-          <div className="my-2.5 p-3 rounded-xl bg-amber-50/80 border border-amber-200/80 text-[12px] text-amber-800 flex items-start gap-2.5">
-            <Info className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-            <div className="leading-relaxed">
-              <span className="font-semibold text-amber-900">Pixabay Real Image Search: </span>
-              {visualData.pixabay_error}
-              <span className="block text-[11px] text-amber-700/80 mt-0.5 font-medium">
-                Configure <code>PIXABAY_API_KEY</code> in Supabase Edge Function Secrets or <code>.env</code> to display live real photography.
-              </span>
-            </div>
-          </div>
-        )}
+
 
         {/* 3. AI GENERATED EDUCATIONAL ILLUSTRATION CARD */}
         {(effectiveImageUrl || visualData?.visual_required) && (

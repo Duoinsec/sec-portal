@@ -10,52 +10,49 @@ const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY || '',
 });
 
-async function generateWithGemini(
+async function generateWithOpenAI(
   systemContent: string,
   messages: any[],
   apiKey: string
 ): Promise<string | null> {
-  const contents = messages.map((m: any) => ({
-    role: m.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: String(m.content || '') }],
-  }));
+  const formattedMessages = [
+    { role: 'system', content: systemContent },
+    ...messages.map((m: any) => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: String(m.content || ''),
+    })),
+  ];
 
-  const payload = {
-    system_instruction: {
-      parts: [{ text: systemContent }],
-    },
-    contents,
-    generationConfig: {
-      responseMimeType: 'application/json',
-      temperature: 0.5,
-      maxOutputTokens: 2500,
-    },
-  };
-
-  const models = ['gemini-3.5-flash-lite', 'gemini-3.5-flash'];
+  const models = ['gpt-4o-mini', 'gpt-4o'];
   for (const model of models) {
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: formattedMessages,
+          response_format: { type: 'json_object' },
+          temperature: 0.5,
+          max_tokens: 2500,
+        }),
+      });
 
       if (res.ok) {
         const data = await res.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const text = data.choices?.[0]?.message?.content;
         if (text) {
           return text;
         }
       } else {
         const errText = await res.text();
-        console.warn(`[Gemini API Warning - ${model}]`, res.status, errText);
+        console.warn(`[OpenAI ChatGPT Warning - ${model}]`, res.status, errText);
       }
     } catch (err: any) {
-      console.warn(`[Gemini API Network Exception - ${model}]`, err?.message || err);
+      console.warn(`[OpenAI ChatGPT Network Exception - ${model}]`, err?.message || err);
     }
   }
   return null;
@@ -117,7 +114,6 @@ async function fetchPixabayImages(query: string, limit = 4): Promise<{ images: P
   if (!pixabayKey) {
     return {
       images: [],
-      error: 'PIXABAY_API_KEY is not configured in server environment or Supabase Secrets.',
     };
   }
 
@@ -288,11 +284,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
-    const geminiKey = process.env.GEMINI_API_KEY || 'AIzaSyDuKXduKLosFrJS_yEzDGqKxFm1kF9kFAA';
+    const openaiKey = process.env.OPENAI_API_KEY || '';
 
-    if (!geminiKey && !process.env.GROQ_API_KEY) {
+    if (!openaiKey && !process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        { error: 'AI API key is not configured in server environment.' },
+        { error: 'OpenAI API key is not configured in server environment.' },
         { status: 500 }
       );
     }
@@ -303,24 +299,24 @@ export async function POST(req: NextRequest) {
       systemContent += `\n\nStudent Profile Context:\n${JSON.stringify(studentContext, null, 2)}`;
     }
 
-    // 4. Primary: Generate using Google Gemini
+    // 4. Primary: Generate using OpenAI ChatGPT
     let rawContent = '{}';
     let providerUsed = 'unknown';
 
-    if (geminiKey) {
+    if (openaiKey) {
       try {
-        const geminiResult = await generateWithGemini(systemContent, messages, geminiKey);
-        if (geminiResult) {
-          rawContent = geminiResult;
-          providerUsed = 'gemini';
+        const openaiResult = await generateWithOpenAI(systemContent, messages, openaiKey);
+        if (openaiResult) {
+          rawContent = openaiResult;
+          providerUsed = 'openai';
         }
-      } catch (geminiErr: any) {
-        console.warn('[Gemini Call Warning] Falling back to secondary engine:', geminiErr?.message);
+      } catch (openaiErr: any) {
+        console.warn('[OpenAI Call Warning] Falling back to secondary engine:', openaiErr?.message);
       }
     }
 
-    // Secondary fallback: Groq (if Gemini was not successful and Groq is configured)
-    if (providerUsed !== 'gemini' && process.env.GROQ_API_KEY) {
+    // Secondary fallback: Groq (if OpenAI was not successful and Groq is configured)
+    if (providerUsed !== 'openai' && process.env.GROQ_API_KEY) {
       try {
         const formattedMessages: ChatCompletionMessageParam[] = messages.map((m: any) => ({
           role: (m.role === 'assistant' ? 'assistant' : 'user') as 'assistant' | 'user',
@@ -442,12 +438,9 @@ export async function POST(req: NextRequest) {
           pixabayError = pixabayResult.error;
         }
 
-        if (realImages.length > 0 && geminiKey) {
-          await explainImagesWithGemini(realImages, validation.sanitized, geminiKey);
-        }
+        // Optional image handling
       } catch (pixErr: any) {
-        console.warn('[Pixabay Pipeline Warning]', pixErr?.message || pixErr);
-        pixabayError = pixErr?.message || 'Error loading Pixabay images';
+        console.warn('[Image Pipeline Notice]', pixErr?.message || pixErr);
       }
     }
 
