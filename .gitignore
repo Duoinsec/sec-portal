@@ -19,6 +19,7 @@
 .DS_Store
 *.pem
 *.apk
+!sec-portal-v1.0-debug.apk
 local.properties
 
 # debug
