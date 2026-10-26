@@ -293,21 +293,6 @@ export function ChatMessageContent({ content, isUser, visualData }: ChatMessageC
   return (
     <>
       <div className="chat-message-body space-y-3">
-        {/* Top Media Quick Jump Badge */}
-        {(hasRealImages || hasIllustration) && (
-          <div className="mb-2 flex items-center justify-between gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-blue-50 border border-emerald-200/80 rounded-xl text-xs text-emerald-950 shadow-xs">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span className="font-semibold truncate">
-                {hasRealImages ? `📸 ${allImagesCount} Topic-Wise Photos Attached` : '📊 Diagram Visual Attached'}
-              </span>
-            </div>
-            <span className="text-[10.5px] text-emerald-800 font-medium px-2 py-0.5 bg-white rounded-md border border-emerald-200">
-              Topic-Wise AI Images
-            </span>
-          </div>
-        )}
-
         {/* TOPIC-WISE RENDERING (EXACTLY AS SCREENSHOT) */}
         {hasTopicSections ? (
           <div className="space-y-4">
