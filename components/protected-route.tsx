@@ -4,20 +4,41 @@ import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { Profile } from '@/lib/types';
 
 export function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
   const { profile, loading } = useAuth();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [safetyTimedOut, setSafetyTimedOut] = useState(false);
+
+  // Synchronous cached profile check for instant reload
+  const cachedProfile = (() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('sec_cached_profile');
+        if (raw) return JSON.parse(raw) as Profile;
+      } catch (_) {}
+    }
+    return null;
+  })();
+
+  const activeProfile = profile || cachedProfile;
 
   useEffect(() => {
     setMounted(true);
+    // Never let the user be stuck on loading for more than 500ms
+    const timer = setTimeout(() => {
+      setSafetyTimedOut(true);
+    }, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (!mounted || loading) return;
+    if (!mounted) return;
+    if (loading && !safetyTimedOut && !activeProfile) return;
 
-    if (!profile) {
+    if (!activeProfile) {
       router.replace('/login/');
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.location.pathname !== '/login/') {
@@ -27,13 +48,13 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
       return;
     }
 
-    if (allowedRoles && !allowedRoles.includes(profile.role)) {
+    if (allowedRoles && !allowedRoles.includes(activeProfile.role)) {
       const dashboardMap: Record<string, string> = {
         ADMIN: '/admin/',
         STAFF: '/staff/',
         STUDENT: '/student/',
       };
-      const dest = dashboardMap[profile.role] || '/login/';
+      const dest = dashboardMap[activeProfile.role] || '/login/';
       router.replace(dest);
       setTimeout(() => {
         if (typeof window !== 'undefined' && window.location.pathname !== dest) {
@@ -41,9 +62,10 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
         }
       }, 150);
     }
-  }, [profile, loading, router, mounted, allowedRoles?.join(',')]);
+  }, [activeProfile, loading, router, mounted, safetyTimedOut, allowedRoles?.join(',')]);
 
-  if (!mounted || loading) {
+  // Show loading spinner ONLY if not mounted OR (loading is true AND we have no cached profile AND safety timer hasn't expired)
+  if (!mounted || (loading && !activeProfile && !safetyTimedOut)) {
     return (
       <div
         style={{
@@ -65,9 +87,9 @@ export function ProtectedRoute({ children, allowedRoles }: { children: React.Rea
     );
   }
 
-  if (!profile) return null;
+  if (!activeProfile) return null;
 
-  if (allowedRoles && !allowedRoles.includes(profile.role)) return null;
+  if (allowedRoles && !allowedRoles.includes(activeProfile.role)) return null;
 
   return <>{children}</>;
 }

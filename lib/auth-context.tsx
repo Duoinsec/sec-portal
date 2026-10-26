@@ -63,8 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await Promise.race([sessionPromise, timeoutPromise]);
         const existingSession = result?.data?.session ?? null;
 
-        if (!mounted) return;
-
         setSession(existingSession);
         setUser(existingSession?.user ?? null);
 
@@ -75,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .select('*')
               .eq('id', existingSession.user.id)
               .maybeSingle();
-            if (mounted && data) {
+            if (data) {
               setProfile(data as Profile);
               try {
                 localStorage.setItem('sec_cached_profile', JSON.stringify(data));
@@ -84,19 +82,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } catch (profileErr) {
             console.warn('[Auth] Error fetching profile:', profileErr);
           }
-        } else {
-          // If no active session, clear profile
-          if (mounted) {
-            setProfile(null);
-            try {
-              localStorage.removeItem('sec_cached_profile');
-            } catch (_) {}
-          }
         }
       } catch (err) {
         console.warn('[Auth] Init auth exception:', err);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
 
@@ -105,7 +95,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       (async () => {
         try {
-          if (!mounted) return;
+          if (event === 'SIGNED_OUT') {
+            setProfile(null);
+            setUser(null);
+            setSession(null);
+            try {
+              localStorage.removeItem('sec_cached_profile');
+            } catch (_) {}
+            setLoading(false);
+            return;
+          }
+
           setSession(newSession);
           setUser(newSession?.user ?? null);
 
@@ -115,26 +115,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .select('*')
               .eq('id', newSession.user.id)
               .maybeSingle();
-            if (mounted) {
-              setProfile(data as Profile | null);
-              if (data) {
-                try {
-                  localStorage.setItem('sec_cached_profile', JSON.stringify(data));
-                } catch (_) {}
-              }
-            }
-          } else {
-            if (mounted) {
-              setProfile(null);
+            if (data) {
+              setProfile(data as Profile);
               try {
-                localStorage.removeItem('sec_cached_profile');
+                localStorage.setItem('sec_cached_profile', JSON.stringify(data));
               } catch (_) {}
             }
           }
         } catch (stateErr) {
           console.warn('[Auth] onAuthStateChange warning:', stateErr);
         } finally {
-          if (mounted) setLoading(false);
+          setLoading(false);
         }
       })();
     });
